@@ -151,22 +151,20 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 					})
 			);
 
-		containerEl.createEl('hr');
-		new Setting(containerEl).setHeading();
-		containerEl.createSpan({ text: 'Daily constraints', cls: 'setting-item-heading' });
+		// --- Day Constraints Section ---
+		new Setting(containerEl)
+			.setName('Daily constraints')
+			.setDesc('Set max time, difficulty, and kid meal options for each day of the week.')
+			.setHeading();
 
 		const daysContainer = containerEl.createDiv({ cls: 'day-constraints-container' });
-		const daysContainerDescription = daysContainer.createDiv({ cls: 'day-constraints-description-row' });
-		daysContainerDescription.createDiv({
-			text: "Set the max difficulty in minutes, difficulty level, and toggle whether or not to add a kid's meal for each day. Set the daily icon for your preference.",
-			cls: 'day-constraints-description'
-		});
-
 		this.plugin.settings.daysOfWeek.forEach(day => {
 			const constraints = this.plugin.settings.dayConstraints[day] || {};
+			// Shorten day names for mobile friendliness
+			const shortDay = day.substring(0, 3); // Mon, Tue, Wed, etc.
 
 			const daySetting = new Setting(daysContainer)
-				.setName(day)
+				.setName(shortDay)
 				.setClass('day-constraint-setting')
 				.addText(text =>
 					text
@@ -190,8 +188,8 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 
 			daySetting.addDropdown(dropdown =>
 				dropdown
-					.addOption('', 'Any difficulty')
-					.addOption('easy', 'Easy only')
+					.addOption('', 'Any')
+					.addOption('easy', 'Easy')
 					.addOption('medium', 'Easy-Medium')
 					.setValue(constraints.maxDifficulty || '')
 					.onChange(async value => {
@@ -203,17 +201,6 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 						} else {
 							this.plugin.settings.dayConstraints[day].maxDifficulty = value;
 						}
-						await this.plugin.saveSettings();
-					})
-			);
-
-			// Per-day emoji icon
-			daySetting.addText(text =>
-				text
-					.setPlaceholder('Emoji')
-					.setValue(this.plugin.settings.dayEmojis[day.toLowerCase()] || '')
-					.onChange(async value => {
-						this.plugin.settings.dayEmojis[day.toLowerCase()] = value || '';
 						await this.plugin.saveSettings();
 					})
 			);
@@ -235,25 +222,43 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 			);
 		});
 
-		// --- Emoji Customization Section ---
-		containerEl.createEl('hr');
-		new Setting(containerEl).setHeading();
-		containerEl.createSpan({ text: 'Customize icons', cls: 'setting-item-heading' });
+		// Day Emojis
+		new Setting(containerEl)
+			.setName("Day icons")
+			.setDesc("Set custom icons for each day of the week.")
+			.setHeading();
+
+		this.plugin.settings.daysOfWeek.forEach(day => {
+			// Shorten day names for mobile friendliness
+			const shortDay = day.substring(0, 3); // Mon, Tue, Wed, etc.
+			
+			new Setting(containerEl)
+				.setName(shortDay)
+				.addText(text =>
+					text
+						.setPlaceholder('Icon')
+						.setValue(this.plugin.settings.dayEmojis[day.toLowerCase()] || '')
+						.onChange(async value => {
+							this.plugin.settings.dayEmojis[day.toLowerCase()] = value || '';
+							await this.plugin.saveSettings();
+						})
+				);
+		});
 
 		// Difficulty Emojis
-		new Setting(containerEl).setHeading();
-		containerEl.createSpan({ text: 'Recipe difficulty level', cls: 'setting-item-heading' });
-		containerEl.createSpan({
-			text: 'Set custom emojis for recipe difficulty levels. These will appear next to each meal in the generated meal plan.'
-		});
+		new Setting(containerEl)
+			.setName("Recipe difficulty level")
+			.setDesc("Set custom icons for recipe difficulty levels.")
+			.setHeading();
+
 		const difficultyKeys = ['easy', 'medium', 'hard', 'default'];
 		difficultyKeys.forEach(level => {
 			new Setting(containerEl)
 				.setName(level.charAt(0).toUpperCase() + level.slice(1))
-				.setDesc(level === 'default' ? 'Default emoji for unknown difficulty' : `Emoji for ${level}`)
+				.setDesc(level === 'default' ? 'For unknown difficulty' : ``)
 				.addText(text =>
 					text
-						.setPlaceholder('Emoji')
+						.setPlaceholder('Icon')
 						.setValue(this.plugin.settings.difficultyEmojis[level] || '')
 						.onChange(async value => {
 							this.plugin.settings.difficultyEmojis[level] = value || '';
