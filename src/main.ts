@@ -22,13 +22,13 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 		const getRecipesBound = this.getRecipesBound.bind(this);
 		const saveSettingsBound = this.saveSettings.bind(this);
 
-		this.addRibbonIcon('chef-hat', 'Generate Weekly Meal Plan', async () => {
+		this.addRibbonIcon('chef-hat', 'Generate meal plan', async () => {
 			await this.generateMealPlan();
 		});
 
 		this.addCommand({
 			id: 'generate-meal-plan',
-			name: 'Generate Weekly Meal Plan',
+			name: 'Generate meal plan',
 			callback: async () => {
 				await this.generateMealPlan();
 			}
@@ -36,7 +36,7 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'swap-meals',
-			name: 'Swap Meals Between Days',
+			name: 'Swap meals between days',
 			callback: () => {
 				new SwapMealsModal(this.app, this, async (entry1, entry2) => {
 					await handleSwapMeals(this.app, this.settings, entry1, entry2);
@@ -46,7 +46,7 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'change-meal',
-			name: 'Change Meal for a Day',
+			name: 'Change meal for a day',
 			callback: () => {
 				new ChangeMealModal(
 					this.app,
@@ -96,9 +96,9 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 		const getRecipesBound = this.getRecipesBound.bind(this);
 		const updateRecipeLastUsed = this.updateRecipeLastUsed.bind(this);
 		const date = new Date().toISOString().slice(0, 10);
-		let folder = (settings.mealPlanFolderPath || 'Meal Plans').trim();
+		let folder = (settings.mealPlanFolderPath || 'Meals').trim();
 		folder = normalizePath(folder);
-		if (!folder) folder = 'Meal Plans';
+		if (!folder) folder = 'Meals';
 		const filePath = normalizePath(`${folder}/Meal Plan - ${date}.md`);
 		const existingFile = app.vault.getAbstractFileByPath(filePath);
 		if (existingFile) {
