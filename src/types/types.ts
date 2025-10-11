@@ -38,7 +38,7 @@ export const DEFAULT_SETTINGS: MealPlannerSettings = {
 	skipKidMealIfFamilyFriendly: true,
 	generateShoppingList: true,
 	mealPlanFolderPath: 'Meals',
-	mealPlanTags: ['meal'],
+	mealPlanTags: ['meal_plan'],
 	minRating: undefined, // No minimum rating by default (includes all recipes)
 	dayEmojis: {
 		monday: '🌙',
