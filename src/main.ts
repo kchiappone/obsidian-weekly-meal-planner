@@ -75,9 +75,9 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'create-recipe-template',
-			name: 'Create new recipe template',
+			name: 'Create new recipe note',
 			callback: async () => {
-				await this.createRecipeTemplate();
+				await this.createRecipeNote();
 			}
 		});
 
@@ -147,7 +147,7 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 		}
 	}
 
-	async createRecipeTemplate() {
+	async createRecipeNote() {
 		const recipeName = await this.promptForRecipeName();
 		if (!recipeName) return;
 
@@ -175,7 +175,7 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 			// Open the new recipe file
 			const leaf = this.app.workspace.getLeaf();
 			await leaf.openFile(file);
-			new Notice(`Recipe template "${recipeName}" created successfully!`);
+			new Notice(`Recipe "${recipeName}" created successfully!`);
 		} catch (error) {
 			new Notice(`Failed to create recipe: ${error.message}`);
 		}
@@ -204,14 +204,13 @@ kid_friendly: false
 season: []
 lastUsed: 
 ---
-
 # ${recipeName}
 
 ## ⏱️ Quick Info
-- 🔪 **Prep Time:** ___ minutes
-- 🔥 **Cook Time:** ___ minutes
+- 🔪 **Prep Time:** x minutes
+- 🔥 **Cook Time:** x minutes
 - 👨‍🍳 **Difficulty:** Easy/Medium/Hard
-- 🍽️ **Meal Type:** ___
+- 🍽️ **Meal Type:** 
 - 👨‍👩‍👧‍👦 **Family Friendly:** Yes/No
 - 👶 **Kid Friendly:** Yes/No
 
@@ -226,10 +225,13 @@ lastUsed:
 3. 
 
 ## 📝 Notes
-
+-
+-
+-
 
 ## 💡 Tips
 - 
+-
 - 
 
 `;
