@@ -1,6 +1,6 @@
 
 // src/main.ts
-import { App, Plugin, TFile, Notice, normalizePath } from 'obsidian';
+import { App, Plugin, TFile, Notice, normalizePath, Menu } from 'obsidian';
 import { MealPlannerSettings, DEFAULT_SETTINGS } from './types/types';
 import { MealPlannerSettingTab } from './settings/SettingsTab';
 import { SwapMealsModal, ChangeMealModal, OverwriteOrNewFileModal, RecipeNameModal } from './modals/Modals';
@@ -22,8 +22,69 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 		const getRecipesBound = this.getRecipesBound.bind(this);
 		const saveSettingsBound = this.saveSettings.bind(this);
 
-		this.addRibbonIcon('chef-hat', 'Generate meal plan', async () => {
-			await this.generateMealPlan();
+		this.addRibbonIcon('chef-hat', 'Weekly Meal Planner', (evt: MouseEvent) => {
+			const menu = new Menu();
+			
+			menu.addItem((item) =>
+				item
+					.setTitle('Generate meal plan')
+					.setIcon('chef-hat')
+					.onClick(async () => {
+						await this.generateMealPlan();
+					})
+			);
+			
+			menu.addItem((item) =>
+				item
+					.setTitle('Swap meals between days')
+					.setIcon('switch')
+					.onClick(() => {
+						new SwapMealsModal(this.app, this, async (entry1, entry2) => {
+							await handleSwapMeals(this.app, this.settings, entry1, entry2);
+						}).open();
+					})
+			);
+			
+			menu.addItem((item) =>
+				item
+					.setTitle('Change meal for a day')
+					.setIcon('edit')
+					.onClick(() => {
+						new ChangeMealModal(
+							this.app,
+							this,
+							async (
+								week: number,
+								day: string,
+								recipeName: string,
+								originalChecklistLine: string,
+								kidMealName?: string | null
+							) => {
+								await handleChangeMealForDay(
+									this.app,
+									this.settings,
+									week,
+									day,
+									recipeName,
+									updateRecipeLastUsed,
+									originalChecklistLine,
+									kidMealName
+								);
+							}
+						).open();
+					})
+			);
+			
+			menu.addItem((item) =>
+				item
+					.setTitle('Create new recipe note')
+					.setIcon('file-plus')
+					.onClick(async () => {
+						await this.createRecipeNote();
+					})
+			);
+			
+			menu.showAtMouseEvent(evt);
 		});
 
 		this.addCommand({
