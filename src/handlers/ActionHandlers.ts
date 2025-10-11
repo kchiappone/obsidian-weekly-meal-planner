@@ -1,6 +1,7 @@
 import { App, TFile, Notice } from 'obsidian';
 import { Recipe, MealPlannerSettings } from '../types/types';
 import { getRecipes, getRecipeTotalTime, getDifficultyEmoji } from '../utils/RecipeUtils';
+import { regenerateShoppingList } from '../core/MealPlanService';
 export async function changeMealForDay(
     app: App,
     settings: MealPlannerSettings,
@@ -86,6 +87,12 @@ export async function changeMealForDay(
     if (newKidMeal) {
       await updateRecipeLastUsed(newKidMeal.file);
     }
+    
+    // Regenerate shopping list if enabled
+    if (settings.generateShoppingList) {
+        await regenerateShoppingList(app, settings, settings.currentMealPlanPath);
+    }
+    
     new Notice(`Changed meal for Week ${week}, ${targetDay} to ${recipeName}.`);
 }
 
@@ -124,5 +131,11 @@ export async function swapMeals(
     let swappedContent = content.replace(entry1.line, '<<SWAP_PLACEHOLDER_1>>').replace(entry2.line, '<<SWAP_PLACEHOLDER_2>>');
     swappedContent = swappedContent.replace('<<SWAP_PLACEHOLDER_1>>', newLine1).replace('<<SWAP_PLACEHOLDER_2>>', newLine2);
     await app.vault.modify(file, swappedContent);
+    
+    // Regenerate shopping list if enabled
+    if (settings.generateShoppingList) {
+        await regenerateShoppingList(app, settings, settings.currentMealPlanPath);
+    }
+    
     new Notice(`Swapped meals between '${entry1.day} (Week ${entry1.week})' and '${entry2.day} (Week ${entry2.week})'!`);
 }

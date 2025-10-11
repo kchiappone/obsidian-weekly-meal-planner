@@ -33,7 +33,7 @@ export class SwapMealsModal extends Modal {
 		let selectedEntry2 = entries[1];
 
 		new Setting(contentEl)
-			.setName('First meal to swap')
+			.setName('Meal #1')
 			.addDropdown(dropdown => {
 				entries.forEach((entry, idx) => {
 					const label = `Week ${entry.week} - ${entry.day}: ${entry.recipes.join(' & ')}`;
@@ -46,7 +46,7 @@ export class SwapMealsModal extends Modal {
 			});
 
 		new Setting(contentEl)
-			.setName('Second meal to swap')
+			.setName('Meal #2')
 			.addDropdown(dropdown => {
 				entries.forEach((entry, idx) => {
 					const label = `Week ${entry.week} - ${entry.day}: ${entry.recipes.join(' & ')}`;

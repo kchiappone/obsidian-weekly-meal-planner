@@ -1,6 +1,6 @@
 import { App, Notice, TFile } from 'obsidian';
 import { Recipe, MealPlannerSettings } from '../types/types';
-import { scoreRecipe, meetsConstraints, getRecipeTotalTime, getDayEmoji, getDifficultyEmoji, getCurrentSeason, isRecipeInSeason } from '../utils/RecipeUtils';
+import { scoreRecipe, meetsConstraints, getRecipeTotalTime, getDayEmoji, getDifficultyEmoji, getCurrentSeason, isRecipeInSeason, getRecipes } from '../utils/RecipeUtils';
 import {
     RecipeSelectionStrategy,
     FamilyFriendlyStrategy,
@@ -335,4 +335,96 @@ export async function generateMealPlan(app: App, settings: MealPlannerSettings, 
     }
 
     return filePath;
+}
+
+// Helper function to regenerate shopping list from existing meal plan content
+export async function regenerateShoppingList(app: App, settings: MealPlannerSettings, filePath: string): Promise<void> {
+    const file = app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile)) {
+        new Notice('Meal plan file not found.');
+        return;
+    }
+
+    let content = await app.vault.read(file);
+    
+    // Parse existing meals from the content
+    const recipes = await getRecipes(app, settings);
+    const regularMeals: Recipe[] = [];
+    const kidMeals = new Map<number, Recipe>();
+    
+    // Extract meals from existing content using regex
+    const mealLineRegex = /- \[ \] \*\*(.+?)\*\* - \[\[(.+?)\]\](?:\s*&\s*\[\[(.+?)\]\])?/g;
+    let match;
+    let mealIndex = 0;
+    
+    while ((match = mealLineRegex.exec(content)) !== null) {
+        const mainRecipeName = match[2];
+        const kidRecipeName = match[3];
+        
+        // Find main recipe
+        const mainRecipe = recipes.find(r => r.file.basename === mainRecipeName);
+        if (mainRecipe) {
+            regularMeals[mealIndex] = mainRecipe;
+        }
+        
+        // Find kid recipe if present
+        if (kidRecipeName) {
+            const kidRecipe = recipes.find(r => r.file.basename === kidRecipeName);
+            if (kidRecipe) {
+                kidMeals.set(mealIndex, kidRecipe);
+            }
+        }
+        
+        mealIndex++;
+    }
+
+    // Remove existing shopping list section
+    const shoppingListStart = content.indexOf('# 🛒 Shopping List');
+    if (shoppingListStart !== -1) {
+        content = content.substring(0, shoppingListStart - 1); // -1 to remove the preceding ---
+    }
+
+    // Regenerate shopping list section
+    if (settings.generateShoppingList && regularMeals.length > 0) {
+        content += '\n---\n';
+        content += `# 🛒 Shopping List\n`;
+        
+        for (let w = 0; w < settings.weeksToGenerate; w++) {
+            const week = w + 1;
+            content += `\n## 📅 Week ${week}\n`;
+            for (let d = 0; d < settings.mealsPerWeek; d++) {
+                const absoluteIndex = w * settings.mealsPerWeek + d;
+                if (absoluteIndex >= regularMeals.length) break;
+                
+                const day = settings.daysOfWeek[d % settings.daysOfWeek.length];
+                const dayEmoji = getDayEmoji(day, settings);
+                content += `\n### ${dayEmoji} ${day}\n`;
+                
+                // Main meal
+                const recipe = regularMeals[absoluteIndex];
+                if (recipe) {
+                    let label = `[[${recipe.file.basename}]]`;
+                    if (recipe.familyFriendly) label += ' (Family Friendly)';
+                    else if (recipe.kidFriendly) label += ' (Kid Friendly)';
+                    content += `\n#### ${label}\n`;
+                    recipe.ingredients.forEach((ingredient: string) => {
+                        content += `- [ ] ${ingredient}\n`;
+                    });
+                }
+                
+                // Kid meal (if any)
+                const kidMeal = kidMeals.get(absoluteIndex);
+                if (kidMeal) {
+                    content += `\n#### [[${kidMeal.file.basename}]] (Kid's Meal)\n`;
+                    kidMeal.ingredients.forEach((ingredient: string) => {
+                        content += `- [ ] ${ingredient}\n`;
+                    });
+                }
+            }
+        }
+        content += '\n';
+    }
+
+    // Update the file
+    await app.vault.modify(file, content);
 }
