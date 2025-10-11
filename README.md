@@ -14,9 +14,17 @@ Generate weekly meal plans and shopping lists from your recipe notes in Obsidian
 - **Settings UI**: Configure folders, number of meals/weeks, day constraints, and more from the settings tab.
 
 ## 📸 Demo
+### Generate Meal Plan
+![Generate meal plan](images/generate_meal_plan.gif)
 
-![Weekly Meal Planner Functionality](images/functionality.gif)
-![Weekly Meal Planner Settings](images/settings.gif)
+### Swap or Change Meals
+![Swap or change meals](images/swap_change_meals.gif)
+
+### Add new recipe
+![Add new recipe](images/add_recipe.gif)
+
+### Settings
+![Settings](images/settings.gif)
 
 ## 🚀 Usage
 
