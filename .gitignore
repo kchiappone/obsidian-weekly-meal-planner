@@ -1,0 +1,41 @@
+# Node modules and build output
+node_modules/
+out/
+.DS_Store
+*.log
+*.tsbuildinfo
+
+# VSCode and JetBrains IDE settings
+.vscode/
+.idea/
+*.iml
+
+# OS-specific files
+Thumbs.db
+
+# Obsidian workspace data (if present)
+.obsidian/
+
+# Ignore local environment and config
+.env
+.env.*
+
+# Ignore package lock if you prefer yarn or pnpm
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Ignore test output
+coverage/
+
+# Ignore temp files
+*.tmp
+*.swp
+
+# Allow source and config files
+!src/
+!package.json
+!tsconfig.json
+!README.md
+!LICENSE
+!manifest.json
