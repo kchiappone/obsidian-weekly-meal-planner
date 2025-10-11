@@ -6,6 +6,7 @@ Generate weekly meal plans and shopping lists from your recipe notes in Obsidian
 
 - **Weekly Meal Plan Generation**: Automatically create meal plans for one or more weeks, with customizable days, constraints, and folders.
 - **Change/Swap Meals**: Easily change or swap meals for any day using commands.
+- **Create Recipe Notes**: Quickly create new recipe notes with a structured template using the "Create new recipe note" command.
 - **Kid & Family Friendly Logic**: Supports kid meals, family-friendly recipes, and per-day constraints.
 - **Shopping List**: Generates a shopping list organized by week, day, and recipe, with clear ingredient breakdowns.
 - **Recipe Variety**: Avoids repeating recipes recently used, using a scoring system.
@@ -18,7 +19,7 @@ Generate weekly meal plans and shopping lists from your recipe notes in Obsidian
 
 ## Usage
 
-1. **Add Recipes**: Place your recipe markdown files in the configured recipe folder. Each recipe should have frontmatter for tags, prep/cook time, difficulty, etc.
+1. **Add Recipes**: Place your recipe markdown files in the configured recipe folder, or use the "Create new recipe note" command to quickly create a structured recipe template. Each recipe should have frontmatter for tags, prep/cook time, difficulty, etc.
 2. **Generate Meal Plan**: Click the chef hat icon or use the command palette to generate a new meal plan.
 3. **Change or Swap Meals**: Use the "Change Meal" or "Swap Meals" commands to update your plan with dropdown-driven modals.
 4. **View Shopping List**: The generated meal plan note includes a shopping list, organized by week, day, and recipe.
