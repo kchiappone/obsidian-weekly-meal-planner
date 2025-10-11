@@ -378,10 +378,12 @@ export async function regenerateShoppingList(app: App, settings: MealPlannerSett
         mealIndex++;
     }
 
-    // Remove existing shopping list section
-    const shoppingListStart = content.indexOf('# 🛒 Shopping List');
-    if (shoppingListStart !== -1) {
-        content = content.substring(0, shoppingListStart - 1); // -1 to remove the preceding ---
+    // Remove existing shopping list section including the preceding horizontal line
+    const horizontalLinePattern = /\n---\n# 🛒 Shopping List/;
+    const shoppingListMatch = content.match(horizontalLinePattern);
+    if (shoppingListMatch) {
+        const shoppingListStart = content.indexOf(shoppingListMatch[0]);
+        content = content.substring(0, shoppingListStart);
     }
 
     // Regenerate shopping list section
