@@ -202,6 +202,7 @@ difficulty: easy
 family_friendly: false
 kid_friendly: false
 season: []
+rating: 
 lastUsed: 
 ---
 # ${recipeName}

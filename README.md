@@ -5,11 +5,12 @@ Generate weekly meal plans and shopping lists from your recipe notes in Obsidian
 ## Features
 
 - **Weekly Meal Plan Generation**: Automatically create meal plans for one or more weeks, with customizable days, constraints, and folders.
+- **Recipe Ratings**: Optionally rate your recipes on a 1-5 star scale. When present, ratings are factored into the meal selection scoring to favor higher-rated recipes.
 - **Change/Swap Meals**: Easily change or swap meals for any day using commands.
 - **Create Recipe Notes**: Quickly create new recipe notes with a structured template using the "Create new recipe note" command.
 - **Kid & Family Friendly Logic**: Supports kid meals, family-friendly recipes, and per-day constraints.
 - **Shopping List**: Generates a shopping list organized by week, day, and recipe, with clear ingredient breakdowns.
-- **Recipe Variety**: Avoids repeating recipes recently used, using a scoring system.
+- **Recipe Variety**: Avoids repeating recipes recently used, using a scoring system that prevents consecutive identical meals.
 - **Settings UI**: Configure folders, number of meals/weeks, day constraints, and more from the settings tab.
 
 ## Screenshots
@@ -20,11 +21,14 @@ Generate weekly meal plans and shopping lists from your recipe notes in Obsidian
 ## Usage
 
 1. **Add Recipes**: Place your recipe markdown files in the configured recipe folder, or use the "Create new recipe note" command to quickly create a structured recipe template. Each recipe should have frontmatter for tags, prep/cook time, difficulty, etc.
-2. **Generate Meal Plan**: Click the chef hat icon or use the command palette to generate a new meal plan.
-3. **Change or Swap Meals**: Use the "Change Meal" or "Swap Meals" commands to update your plan with dropdown-driven modals.
-4. **View Shopping List**: The generated meal plan note includes a shopping list, organized by week, day, and recipe.
+2. **Rate Your Recipes (Optional)**: Add a `rating: 1-5` field to your recipe frontmatter. When present, these ratings are factored into meal selection to favor higher-rated recipes.
+3. **Generate Meal Plan**: Click the chef hat icon or use the command palette to generate a new meal plan.
+4. **Change or Swap Meals**: Use the "Change Meal" or "Swap Meals" commands to update your plan with dropdown-driven modals.
+5. **View Shopping List**: The generated meal plan note includes a shopping list, organized by week, day, and recipe.
 
 > **💡 Note**: For the shopping list to work properly, each recipe must include an "## Ingredients" section (h2 header) with ingredients listed as bullet points (e.g., `- 500g ground beef`). The plugin automatically extracts these ingredients to generate your shopping list.
+
+> **⭐ Rating Tip**: Recipe ratings are completely optional! If you add them, higher-rated recipes will be favored during selection. You can also set a minimum rating filter to only include recipes above a certain threshold.
 
 ## Example Recipe Format
 
@@ -40,6 +44,7 @@ difficulty: easy
 family_friendly: true
 kid_friendly: true
 season: []
+rating: 5
 ---
 
 # 🍝 Spaghetti and Meatballs
@@ -77,6 +82,7 @@ _...other note headings and text..._
 - **Weeks to generate**: Number of weeks to include in each plan.
 - **Skip kid meal if family friendly**: Skip the kid's meal if a meal is family-friendly.
 - **Generate shopping list**: Include a shopping list in the generated meal plan note.
+- **Minimum recipe rating**: Only include recipes with this rating or higher (1-5 stars). Leave empty to include all recipes regardless of rating.
 - **Seasonality**: Only select recipes that are in season for the current time of year.
 - **Hemisphere**: Set your hemisphere to correctly determine the season.
 - **Time constraints**: Set max time for each meal

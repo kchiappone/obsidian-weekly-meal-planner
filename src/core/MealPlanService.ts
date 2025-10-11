@@ -68,7 +68,36 @@ export function selectRecipes(
 
     // Assign meals in sequential day order to ensure proper consecutive day checking
     for (let i = 0; i < count; i++) {
-        const pool = eligiblePools[i].filter(r => !assignedRecipes.has(r));
+        let pool = eligiblePools[i].filter(r => !assignedRecipes.has(r));
+        
+        // Filter out recipes that would create consecutive days BEFORE scoring
+        pool = pool.filter(recipe => {
+            // Check previous day
+            const prevDayIndex = i - 1;
+            if (prevDayIndex >= 0 && selected[prevDayIndex]) {
+                const prevRecipe = selected[prevDayIndex];
+                if (prevRecipe.file.path === recipe.file.path) {
+                    return false; // Exclude this recipe to prevent consecutive days
+                }
+            }
+            
+            // Check next day (if already assigned)
+            const nextDayIndex = i + 1;
+            if (nextDayIndex < selected.length && selected[nextDayIndex]) {
+                const nextRecipe = selected[nextDayIndex];
+                if (nextRecipe.file.path === recipe.file.path) {
+                    return false; // Exclude this recipe to prevent consecutive days
+                }
+            }
+            
+            return true; // Recipe is safe to consider
+        });
+        
+        // If filtering removed ALL options, revert to original pool but still prioritize non-consecutive ones via scoring
+        if (pool.length === 0) {
+            pool = eligiblePools[i].filter(r => !assignedRecipes.has(r));
+        }
+        
         const scored = pool.map(recipe => ({
             recipe,
             score: scoreRecipe(recipe, selected.filter(Boolean) as Recipe[], i, selected)
@@ -91,10 +120,42 @@ export function selectRecipes(
         if (!selected[i]) {
             const dayIndex = i % days.length;
             const day = days[dayIndex];
-            const pool = recipes.filter(r =>
+            let pool = recipes.filter(r =>
                 meetsConstraints(r, day, settings.dayConstraints, false) &&
                 (!r.kidFriendly || r.familyFriendly)
             );
+            
+            // Filter out consecutive day conflicts even in fallback
+            pool = pool.filter(recipe => {
+                // Check previous day
+                const prevDayIndex = i - 1;
+                if (prevDayIndex >= 0 && selected[prevDayIndex]) {
+                    const prevRecipe = selected[prevDayIndex];
+                    if (prevRecipe.file.path === recipe.file.path) {
+                        return false; // Exclude this recipe to prevent consecutive days
+                    }
+                }
+                
+                // Check next day (if already assigned)
+                const nextDayIndex = i + 1;
+                if (nextDayIndex < selected.length && selected[nextDayIndex]) {
+                    const nextRecipe = selected[nextDayIndex];
+                    if (nextRecipe.file.path === recipe.file.path) {
+                        return false; // Exclude this recipe to prevent consecutive days
+                    }
+                }
+                
+                return true; // Recipe is safe to consider
+            });
+            
+            // If filtering removed ALL options, revert to original constraint-based pool
+            if (pool.length === 0) {
+                pool = recipes.filter(r =>
+                    meetsConstraints(r, day, settings.dayConstraints, false) &&
+                    (!r.kidFriendly || r.familyFriendly)
+                );
+            }
+            
             if (pool.length > 0) {
                 const chosen = pool[Math.floor(Math.random() * pool.length)];
                 selected[i] = chosen;

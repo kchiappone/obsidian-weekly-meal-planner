@@ -20,6 +20,7 @@ export interface MealPlannerSettings {
 	mealPlanTags?: string[]; // Custom tags for meal plan frontmatter
 	skipKidMealIfFamilyFriendly: boolean;
 	generateShoppingList: boolean;
+	minRating?: number; // Minimum rating for recipes to be included in meal plans
 
     // Emoji customization
 	dayEmojis: Record<string, string>; // e.g. { monday: '🌙', ... }
@@ -38,6 +39,7 @@ export const DEFAULT_SETTINGS: MealPlannerSettings = {
 	generateShoppingList: true,
 	mealPlanFolderPath: 'Meals',
 	mealPlanTags: ['meal'],
+	minRating: undefined, // No minimum rating by default (includes all recipes)
 	dayEmojis: {
 		monday: '🌙',
 		tuesday: '🔥',
@@ -69,4 +71,5 @@ export interface Recipe {
 	kidFriendly?: boolean;
 	familyFriendly?: boolean;
 	meal_type?: string;
+	rating?: number; // Recipe rating (1-5 scale)
 }

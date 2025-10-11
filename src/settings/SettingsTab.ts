@@ -128,6 +128,29 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName('Minimum recipe rating')
+			.setDesc('Only include recipes with this rating or higher. Unrated recipes are always included. Leave empty to include all recipes.')
+			.addDropdown(dropdown => {
+				dropdown.addOption('', 'No minimum');
+				for (let i = 1; i <= 5; i++) {
+					const stars = '★'.repeat(i);
+					dropdown.addOption(String(i), `${i} ${stars}`);
+				}
+				dropdown.setValue(this.plugin.settings.minRating ? String(this.plugin.settings.minRating) : '');
+				dropdown.onChange(async value => {
+					if (value === '') {
+						this.plugin.settings.minRating = undefined;
+					} else {
+						const num = parseInt(value);
+						if (!isNaN(num) && num >= 1 && num <= 5) {
+							this.plugin.settings.minRating = num;
+						}
+					}
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
 			.setName('Seasonality')
 			.setDesc('Only select recipes that are in season for the current time of year.')
 			.addToggle(toggle =>

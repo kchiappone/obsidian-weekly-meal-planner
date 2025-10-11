@@ -41,18 +41,48 @@ export function getRecipeTotalTime(recipe: Recipe): number {
 export function scoreRecipe(recipe: Recipe, alreadySelected: Recipe[], currentDayIndex?: number, selectedArray?: Recipe[]): number {
     let score = 100;
     
-    // Time-based scoring for previously used recipes
-    if (recipe.lastUsed) {
-        const daysSinceUsed = (Date.now() - recipe.lastUsed) / (1000 * 60 * 60 * 24);
-        score += Math.min(daysSinceUsed * 2, 50);
-    } else {
-        score += 30; // Bonus for never-used recipes
+    // Rating-based scoring bonus (higher ratings get more points)
+    if (recipe.rating !== undefined && recipe.rating !== null) {
+        // Give smaller bonus for higher ratings to prevent dominance
+        // 5-star: +12 points, 4-star: +9, 3-star: +6, 2-star: +3, 1-star: 0
+        const ratingBonus = Math.max(0, (recipe.rating - 1) * 3);
+        score += ratingBonus;
     }
+    // Note: Unrated recipes get no bonus or penalty, keeping them in the pool
     
-    // Heavy penalty for exact recipe repetition
+    // Frequency penalty within current meal plan - penalize recipes that appear multiple times
     const exactMatches = alreadySelected.filter(selected => selected.file.path === recipe.file.path).length;
     if (exactMatches > 0) {
-        score -= exactMatches * 100; // Severe penalty for reusing the same recipe
+        // Escalating penalty: 1st repeat = -75, 2nd repeat = -200, 3rd repeat = -400, etc.
+        score -= exactMatches * 75 * (exactMatches + 1);
+    }
+    
+    // Additional penalty for recipes appearing in recent selections (even if not exact consecutive days)
+    if (typeof currentDayIndex === 'number' && selectedArray) {
+        const recentRange = 3; // Check recipes from last 3 days
+        for (let checkIndex = Math.max(0, currentDayIndex - recentRange); checkIndex < currentDayIndex; checkIndex++) {
+            if (selectedArray[checkIndex] && selectedArray[checkIndex].file.path === recipe.file.path) {
+                const dayDistance = currentDayIndex - checkIndex;
+                // Stronger penalty for closer days: 1 day = -100, 2 days = -50, 3 days = -25
+                score -= Math.max(25, 100 / dayDistance);
+            }
+        }
+    }
+    
+    // Enhanced recent usage penalty based on lastUsed timestamp
+    if (recipe.lastUsed) {
+        const daysSinceUsed = (Date.now() - recipe.lastUsed) / (1000 * 60 * 60 * 24);
+        if (daysSinceUsed < 7) {
+            // Strong penalty for recipes used in the last week
+            score -= (7 - daysSinceUsed) * 10;
+        } else if (daysSinceUsed < 14) {
+            // Moderate penalty for recipes used in the last 2 weeks
+            score -= (14 - daysSinceUsed) * 2;
+        }
+        // After 2+ weeks, give bonus as before
+        score += Math.min(daysSinceUsed * 1, 30);
+    } else {
+        score += 25; // Bonus for never-used recipes (reduced from 30)
     }
     
     // Ingredient overlap penalty
@@ -74,7 +104,7 @@ export function scoreRecipe(recipe: Recipe, alreadySelected: Recipe[], currentDa
         if (prevDayIndex >= 0 && selectedArray[prevDayIndex]) {
             const prevRecipe = selectedArray[prevDayIndex];
             if (prevRecipe.file.path === recipe.file.path) {
-                score -= 100; // Heavy penalty for exact same recipe on consecutive days
+                return -9999; // Absolutely prevent same recipe on consecutive days
             } else if (prevRecipe.meal_type && recipe.meal_type && prevRecipe.meal_type === recipe.meal_type) {
                 score -= 30; // Penalty for same meal type on consecutive days
             }
@@ -85,7 +115,7 @@ export function scoreRecipe(recipe: Recipe, alreadySelected: Recipe[], currentDa
         if (nextDayIndex < selectedArray.length && selectedArray[nextDayIndex]) {
             const nextRecipe = selectedArray[nextDayIndex];
             if (nextRecipe.file.path === recipe.file.path) {
-                score -= 100; // Heavy penalty for exact same recipe on consecutive days
+                return -9999; // Absolutely prevent same recipe on consecutive days
             } else if (nextRecipe.meal_type && recipe.meal_type && nextRecipe.meal_type === recipe.meal_type) {
                 score -= 30; // Penalty for same meal type on consecutive days
             }
@@ -103,7 +133,7 @@ export function scoreRecipe(recipe: Recipe, alreadySelected: Recipe[], currentDa
         if (alreadySelected.length > 0) {
             const lastRecipe = alreadySelected[alreadySelected.length - 1];
             if (lastRecipe.name.toLowerCase() === recipe.name.toLowerCase()) {
-                score -= 50; // Penalty for same recipe name consecutively
+                return -9999; // Absolutely prevent same recipe consecutively
             }
         }
     }
@@ -229,8 +259,18 @@ export async function getRecipes(app: App, settings: MealPlannerSettings): Promi
             season: cache?.frontmatter?.season ? normalizeSeason(cache?.frontmatter?.season) : undefined,
             kidFriendly: cache?.frontmatter?.kid_friendly || false,
             familyFriendly: cache?.frontmatter?.family_friendly || false,
-            meal_type: cache?.frontmatter?.meal_type?.toLowerCase()
+            meal_type: cache?.frontmatter?.meal_type?.toLowerCase(),
+            rating: cache?.frontmatter?.rating
         };
+        
+        // Filter by minimum rating if specified
+        if (settings.minRating !== undefined) {
+            // Include recipe if it's unrated (undefined/null) OR if it meets the minimum rating
+            if (recipe.rating !== undefined && recipe.rating < settings.minRating) {
+                continue; // Skip this recipe
+            }
+        }
+        
         recipes.push(recipe);
     }
     return recipes;
