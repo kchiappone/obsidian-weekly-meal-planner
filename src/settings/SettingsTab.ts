@@ -54,11 +54,11 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 			.addText(text =>
 				text
 					.setPlaceholder('meal, weekly, food')
-					.setValue((this.plugin.settings.mealPlanTags || ['meal']).join(', '))
+					.setValue((this.plugin.settings.mealPlanTags || ['meal_plan']).join(', '))
 					.onChange(async value => {
 						this.plugin.settings.mealPlanTags = value.split(',').map(t => t.trim()).filter(Boolean);
 						if (this.plugin.settings.mealPlanTags.length === 0) {
-							this.plugin.settings.mealPlanTags = ['meal'];
+							this.plugin.settings.mealPlanTags = ['meal_plan'];
 						}
 						await this.plugin.saveSettings();
 					})

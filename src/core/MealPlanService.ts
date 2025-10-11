@@ -231,7 +231,7 @@ export async function generateMealPlan(app: App, settings: MealPlannerSettings, 
     // --- Meal Plan Note Content Generation ---
     const date = new Date().toISOString().slice(0, 10);
 
-    let folder = (settings.mealPlanFolderPath || 'Meal Plans').trim();
+    let folder = (settings.mealPlanFolderPath || 'Meals').trim();
     // Remove leading/trailing slashes and whitespace
     folder = folder.replace(/^\/+|\/+$/g, '');
     if (!folder) folder = 'Meal Plans';
