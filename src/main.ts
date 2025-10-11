@@ -107,7 +107,11 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 				filePath,
 				async () => {
 					// Overwrite
-					await coreGenerateMealPlan(app, settings, getRecipesBound, updateRecipeLastUsed);
+					const generatedPath = await coreGenerateMealPlan(app, settings, getRecipesBound, updateRecipeLastUsed);
+					if (generatedPath) {
+						this.settings.currentMealPlanPath = generatedPath;
+						await this.saveSettings();
+					}
 				},
 				async () => {
 					// Create new file with unique postfix
@@ -118,12 +122,20 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 					const origFolder = settings.mealPlanFolderPath;
 					settings.mealPlanFolderPath = folder;
 					// Patch coreGenerateMealPlan to accept a custom file path if needed
-					await coreGenerateMealPlan(app, settings, getRecipesBound, updateRecipeLastUsed, uniqueFilePath);
+					const generatedPath = await coreGenerateMealPlan(app, settings, getRecipesBound, updateRecipeLastUsed, uniqueFilePath);
 					settings.mealPlanFolderPath = origFolder;
+					if (generatedPath) {
+						this.settings.currentMealPlanPath = generatedPath;
+						await this.saveSettings();
+					}
 				}
 			).open();
 		} else {
-			await coreGenerateMealPlan(app, settings, getRecipesBound, updateRecipeLastUsed);
+			const generatedPath = await coreGenerateMealPlan(app, settings, getRecipesBound, updateRecipeLastUsed);
+			if (generatedPath) {
+				this.settings.currentMealPlanPath = generatedPath;
+				await this.saveSettings();
+			}
 		}
 	}
 
