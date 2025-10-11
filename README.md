@@ -83,5 +83,13 @@ _...other note headings and text..._
 ## Development
 - Written in TypeScript for the Obsidian API.
 
+## Support
+
+If you find this plugin helpful and want to support its development, consider buying me a coffee! ☕
+
+[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/kchiappone)
+
+Your support helps me maintain and improve this plugin. Thank you! 🙏
+
 ## License
 MIT

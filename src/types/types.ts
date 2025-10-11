@@ -36,8 +36,8 @@ export const DEFAULT_SETTINGS: MealPlannerSettings = {
 	dayConstraints: {},
 	skipKidMealIfFamilyFriendly: true,
 	generateShoppingList: true,
-	mealPlanFolderPath: 'Meal Plans',
-	mealPlanTags: ['meal_plan'],
+	mealPlanFolderPath: 'Meals',
+	mealPlanTags: ['meal'],
 	dayEmojis: {
 		monday: '🌙',
 		tuesday: '🔥',
