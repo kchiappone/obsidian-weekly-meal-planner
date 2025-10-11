@@ -38,14 +38,24 @@ export function getRecipeTotalTime(recipe: Recipe): number {
 
 
 // Score a recipe for selection (higher is better)
-export function scoreRecipe(recipe: Recipe, alreadySelected: Recipe[]): number {
+export function scoreRecipe(recipe: Recipe, alreadySelected: Recipe[], currentDayIndex?: number, selectedArray?: Recipe[]): number {
     let score = 100;
+    
+    // Time-based scoring for previously used recipes
     if (recipe.lastUsed) {
         const daysSinceUsed = (Date.now() - recipe.lastUsed) / (1000 * 60 * 60 * 24);
         score += Math.min(daysSinceUsed * 2, 50);
     } else {
-        score += 30;
+        score += 30; // Bonus for never-used recipes
     }
+    
+    // Heavy penalty for exact recipe repetition
+    const exactMatches = alreadySelected.filter(selected => selected.file.path === recipe.file.path).length;
+    if (exactMatches > 0) {
+        score -= exactMatches * 100; // Severe penalty for reusing the same recipe
+    }
+    
+    // Ingredient overlap penalty
     const overlapPenalty = alreadySelected.reduce((penalty, selected) => {
         const overlap = recipe.ingredients.filter(ing =>
             selected.ingredients.some(selIng =>
@@ -56,15 +66,55 @@ export function scoreRecipe(recipe: Recipe, alreadySelected: Recipe[]): number {
         return penalty + (overlap * 5);
     }, 0);
     score -= overlapPenalty;
-    if (recipe.meal_type && alreadySelected.length > 0) {
-        const lastRecipe = alreadySelected[alreadySelected.length - 1];
-        if (lastRecipe.meal_type && lastRecipe.meal_type === recipe.meal_type) {
-            score -= 30;
+    
+    // Enhanced anti-consecutive logic that checks actual adjacent days
+    if (typeof currentDayIndex === 'number' && selectedArray) {
+        // Check previous day
+        const prevDayIndex = currentDayIndex - 1;
+        if (prevDayIndex >= 0 && selectedArray[prevDayIndex]) {
+            const prevRecipe = selectedArray[prevDayIndex];
+            if (prevRecipe.file.path === recipe.file.path) {
+                score -= 100; // Heavy penalty for exact same recipe on consecutive days
+            } else if (prevRecipe.meal_type && recipe.meal_type && prevRecipe.meal_type === recipe.meal_type) {
+                score -= 30; // Penalty for same meal type on consecutive days
+            }
+        }
+        
+        // Check next day
+        const nextDayIndex = currentDayIndex + 1;
+        if (nextDayIndex < selectedArray.length && selectedArray[nextDayIndex]) {
+            const nextRecipe = selectedArray[nextDayIndex];
+            if (nextRecipe.file.path === recipe.file.path) {
+                score -= 100; // Heavy penalty for exact same recipe on consecutive days
+            } else if (nextRecipe.meal_type && recipe.meal_type && nextRecipe.meal_type === recipe.meal_type) {
+                score -= 30; // Penalty for same meal type on consecutive days
+            }
+        }
+    } else {
+        // Fallback to original logic if day index info not available
+        if (recipe.meal_type && alreadySelected.length > 0) {
+            const lastRecipe = alreadySelected[alreadySelected.length - 1];
+            if (lastRecipe.meal_type && lastRecipe.meal_type === recipe.meal_type) {
+                score -= 30;
+            }
+        }
+        
+        // Additional anti-consecutive penalty based on recipe name similarity
+        if (alreadySelected.length > 0) {
+            const lastRecipe = alreadySelected[alreadySelected.length - 1];
+            if (lastRecipe.name.toLowerCase() === recipe.name.toLowerCase()) {
+                score -= 50; // Penalty for same recipe name consecutively
+            }
         }
     }
+    
+    // Difficulty-based scoring adjustments
     if (recipe.difficulty === 'easy') score += 10;
     if (recipe.difficulty === 'hard') score -= 5;
-    score += Math.random() * 20;
+    
+    // Add some randomness to break ties, but less than before to make scoring more deterministic
+    score += Math.random() * 10;
+    
     return score;
 }
 

@@ -66,26 +66,24 @@ export function selectRecipes(
         eligiblePools.push(pool);
     }
 
-    // Shuffle assignment order
-    const indices = Array.from({ length: count }, (_, i) => i);
-    for (let i = indices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-
-    for (const i of indices) {
+    // Assign meals in sequential day order to ensure proper consecutive day checking
+    for (let i = 0; i < count; i++) {
         const pool = eligiblePools[i].filter(r => !assignedRecipes.has(r));
         const scored = pool.map(recipe => ({
             recipe,
-            score: scoreRecipe(recipe, selected.filter(Boolean) as Recipe[])
+            score: scoreRecipe(recipe, selected.filter(Boolean) as Recipe[], i, selected)
         }));
         scored.sort((a, b) => b.score - a.score);
-        const topScore = scored[0].score;
-        const topRecipes = scored.filter(r => r.score === topScore);
-    const chosen = topRecipes[Math.floor(Math.random() * topRecipes.length)].recipe;
-    selected[i] = chosen;
-    if (chosen.familyFriendly) indicesWithFamilyMeals.add(i);
-    else if (chosen.kidFriendly && !chosen.familyFriendly && kidMealIndices[i]) indicesWithFamilyMeals.add(i);
+        
+        if (scored.length > 0) {
+            const topScore = scored[0].score;
+            const topRecipes = scored.filter(r => r.score === topScore);
+            const chosen = topRecipes[Math.floor(Math.random() * topRecipes.length)].recipe;
+            selected[i] = chosen;
+            assignedRecipes.add(chosen);
+            if (chosen.familyFriendly) indicesWithFamilyMeals.add(i);
+            else if (chosen.kidFriendly && !chosen.familyFriendly && kidMealIndices[i]) indicesWithFamilyMeals.add(i);
+        }
     }
 
     // Fill any unassigned days with any available eligible recipe for that day (relax uniqueness, but still enforce constraints)

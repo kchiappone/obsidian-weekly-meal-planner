@@ -234,3 +234,61 @@ export class OverwriteOrNewFileModal extends Modal {
         this.contentEl.empty();
     }
 }
+
+export class RecipeNameModal extends Modal {
+    onSubmit: (recipeName: string) => void;
+    recipeName = '';
+
+    constructor(app: App, onSubmit: (recipeName: string) => void) {
+        super(app);
+        this.onSubmit = onSubmit;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.createEl('h2', { text: 'Create New Recipe' });
+
+        new Setting(contentEl)
+            .setName('Recipe name')
+            .setDesc('Enter a name for your new recipe')
+            .addText(text => {
+                text.setPlaceholder('e.g., Spaghetti and Meatballs')
+                    .setValue(this.recipeName)
+                    .onChange(value => {
+                        this.recipeName = value;
+                    });
+                text.inputEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        this.submit();
+                    }
+                });
+                // Focus the input
+                setTimeout(() => text.inputEl.focus(), 10);
+            });
+
+        new Setting(contentEl)
+            .addButton(btn => btn
+                .setButtonText('Create Recipe')
+                .setCta()
+                .onClick(() => this.submit())
+            )
+            .addButton(btn => btn
+                .setButtonText('Cancel')
+                .onClick(() => {
+                    this.close();
+                    this.onSubmit('');
+                })
+            );
+    }
+
+    submit() {
+        if (this.recipeName.trim()) {
+            this.close();
+            this.onSubmit(this.recipeName.trim());
+        }
+    }
+
+    onClose() {
+        this.contentEl.empty();
+    }
+}

@@ -3,7 +3,7 @@
 import { App, Plugin, TFile, Notice, normalizePath } from 'obsidian';
 import { MealPlannerSettings, DEFAULT_SETTINGS } from './types/types';
 import { MealPlannerSettingTab } from './settings/SettingsTab';
-import { SwapMealsModal, ChangeMealModal, OverwriteOrNewFileModal } from './modals/Modals';
+import { SwapMealsModal, ChangeMealModal, OverwriteOrNewFileModal, RecipeNameModal } from './modals/Modals';
 import { getRecipes } from './utils/RecipeUtils';
 import { generateMealPlan as coreGenerateMealPlan } from './core/MealPlanService';
 import {
@@ -73,6 +73,14 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 			}
 		});
 
+		this.addCommand({
+			id: 'create-recipe-template',
+			name: 'Create new recipe template',
+			callback: async () => {
+				await this.createRecipeTemplate();
+			}
+		});
+
 		this.addSettingTab(new MealPlannerSettingTab(this.app, this));
 	}
 
@@ -137,6 +145,94 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 				await this.saveSettings();
 			}
 		}
+	}
+
+	async createRecipeTemplate() {
+		const recipeName = await this.promptForRecipeName();
+		if (!recipeName) return;
+
+		const recipeFolder = this.settings.recipeFolderPath || 'Recipes';
+		const recipePath = normalizePath(`${recipeFolder}/${recipeName}.md`);
+
+		// Check if file already exists
+		const existingFile = this.app.vault.getAbstractFileByPath(recipePath);
+		if (existingFile) {
+			new Notice(`Recipe "${recipeName}" already exists!`);
+			return;
+		}
+
+		// Ensure recipe folder exists
+		const folder = this.app.vault.getAbstractFileByPath(recipeFolder);
+		if (!folder) {
+			await this.app.vault.createFolder(recipeFolder);
+		}
+
+		// Create recipe template content
+		const template = this.generateRecipeTemplate(recipeName);
+
+		try {
+			const file = await this.app.vault.create(recipePath, template);
+			// Open the new recipe file
+			const leaf = this.app.workspace.getLeaf();
+			await leaf.openFile(file);
+			new Notice(`Recipe template "${recipeName}" created successfully!`);
+		} catch (error) {
+			new Notice(`Failed to create recipe: ${error.message}`);
+		}
+	}
+
+	private async promptForRecipeName(): Promise<string | null> {
+		return new Promise((resolve) => {
+			const modal = new RecipeNameModal(this.app, (recipeName: string) => {
+				resolve(recipeName || null);
+			});
+			modal.open();
+		});
+	}
+
+	private generateRecipeTemplate(recipeName: string): string {
+		const currentDate = new Date().toISOString();
+		return `---
+tags:
+  - recipe
+meal_type: 
+prep_time: 
+cook_time: 
+difficulty: easy
+family_friendly: false
+kid_friendly: false
+season: []
+lastUsed: 
+---
+
+# ${recipeName}
+
+## ⏱️ Quick Info
+- 🔪 **Prep Time:** ___ minutes
+- 🔥 **Cook Time:** ___ minutes
+- 👨‍🍳 **Difficulty:** Easy/Medium/Hard
+- 🍽️ **Meal Type:** ___
+- 👨‍👩‍👧‍👦 **Family Friendly:** Yes/No
+- 👶 **Kid Friendly:** Yes/No
+
+## 🛒 Ingredients
+- 
+- 
+- 
+
+## 👩‍🍳 Instructions
+1. 
+2. 
+3. 
+
+## 📝 Notes
+
+
+## 💡 Tips
+- 
+- 
+
+`;
 	}
 
 		async updateRecipeLastUsed(file: TFile) {
