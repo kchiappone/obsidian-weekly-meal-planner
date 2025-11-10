@@ -40,13 +40,22 @@ export function selectRecipes(
         const dayIndex = i % days.length;
         const day = days[dayIndex];
         let pool: Recipe[] = [];
-        for (const _strategy of mainMealStrategies) {
+        for (const strategy of mainMealStrategies) {
+            const availableRecipes = recipes.filter(r => !assignedRecipes.has(r));
+            const selectedRecipe = strategy(availableRecipes, day, settings, selected.filter(Boolean), false);
+            if (selectedRecipe) {
+                console.log(`Day ${i} (${day}): Used strategy ${strategy.name} -> selected ${selectedRecipe.name}`);
+                pool = [selectedRecipe];
+                break;
+            }
+        }
+        // Fallback: if no strategy worked, use basic filtering
+        if (pool.length === 0) {
             pool = recipes.filter(r =>
                 !assignedRecipes.has(r) &&
                 meetsConstraints(r, day, settings.dayConstraints, false) &&
                 (!r.kidFriendly || r.familyFriendly)
             );
-            if (pool.length > 0) break;
         }
         eligiblePools.push(pool);
     }

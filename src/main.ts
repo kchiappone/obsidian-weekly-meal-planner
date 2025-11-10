@@ -35,7 +35,7 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 					.setIcon('switch')
 					.onClick(() => {
 						new SwapMealsModal(this.app, this, (entry1, entry2) => {
-							handleSwapMeals(this.app, this.settings, entry1, entry2);
+							void handleSwapMeals(this.app, this.settings, entry1, entry2);
 						}).open();
 					})
 			);
@@ -55,7 +55,7 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 								originalChecklistLine: string,
 								kidMealName?: string | null
 							) => {
-								handleChangeMealForDay(
+								void handleChangeMealForDay(
 									this.app,
 									this.settings,
 									week,
@@ -95,7 +95,7 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 			name: 'Swap meals between days',
 			callback: () => {
 				new SwapMealsModal(this.app, this, (entry1, entry2) => {
-					handleSwapMeals(this.app, this.settings, entry1, entry2);
+					void handleSwapMeals(this.app, this.settings, entry1, entry2);
 				}).open();
 			}
 		});
@@ -114,7 +114,7 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 						originalChecklistLine: string,
 						kidMealName?: string | null
 					) => {
-						handleChangeMealForDay(
+						void handleChangeMealForDay(
 							this.app,
 							this.settings,
 							week,
