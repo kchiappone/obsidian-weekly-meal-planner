@@ -44,7 +44,7 @@ export function selectRecipes(
             const availableRecipes = recipes.filter(r => !assignedRecipes.has(r));
             const selectedRecipe = strategy(availableRecipes, day, settings, selected.filter(Boolean), false);
             if (selectedRecipe) {
-                console.log(`Day ${i} (${day}): Used strategy ${strategy.name} -> selected ${selectedRecipe.name}`);
+                // console.log(`Day ${i} (${day}): Used strategy ${strategy.name} -> selected ${selectedRecipe.name}`);
                 pool = [selectedRecipe];
                 break;
             }
