@@ -1,5 +1,5 @@
 
-import { App, TFile, Notice } from 'obsidian';
+import { App, Notice } from 'obsidian';
 import { Recipe, MealPlannerSettings, DayConstraints } from '../types/types';
 
 // =========================
@@ -172,30 +172,8 @@ export function meetsConstraints(recipe: Recipe, day: string, constraints: Recor
     return true;
 }
 
-// Get the current season based on settings
-export function getCurrentSeason(settings: MealPlannerSettings): string {
-    const month = new Date().getMonth() + 1;
-    if (settings.hemisphere === 'northern') {
-        if (month >= 3 && month <= 5) return 'spring';
-        if (month >= 6 && month <= 8) return 'summer';
-        if (month >= 9 && month <= 11) return 'fall';
-        return 'winter';
-    }
-    if (month >= 3 && month <= 5) return 'fall';
-    if (month >= 6 && month <= 8) return 'winter';
-    if (month >= 9 && month <= 11) return 'spring';
-    return 'summer';
-}
-
-// Check if a recipe is in season
-export function isRecipeInSeason(recipe: Recipe, settings: MealPlannerSettings): boolean {
-    if (!recipe.season || recipe.season.length === 0) return true;
-    const currentSeason = getCurrentSeason(settings);
-    return recipe.season.includes(currentSeason);
-}
-
 // Normalize season strings to standard values
-export function normalizeSeason(season: string | string[]): string[] {
+function normalizeSeason(season: string | string[]): string[] {
     const seasons = Array.isArray(season) ? season : [season];
     return seasons.map(s => {
         const normalized = s.toLowerCase().trim();
@@ -208,7 +186,7 @@ export function normalizeSeason(season: string | string[]): string[] {
 }
 
 // Extract ingredients from recipe content
-export function extractIngredients(content: string): string[] {
+function extractIngredients(content: string): string[] {
     // Allow for optional icon before 'Ingredients' in the section header
     const ingredientSection = content.match(/##(?:\s*\p{Emoji})?\s*Ingredients\n([\s\S]*?)(?=\n##|$)/iu);
     if (!ingredientSection) return [];
@@ -219,7 +197,7 @@ export function extractIngredients(content: string): string[] {
 }
 
 // Extract prep or cook time from recipe content
-export function extractTime(content: string, type: 'prep' | 'cook'): number | undefined {
+function extractTime(content: string, type: 'prep' | 'cook'): number | undefined {
     const regex = type === 'prep'
         ? /prep time:?\s*(\d+)/i
         : /cook time:?\s*(\d+)/i;
@@ -228,7 +206,7 @@ export function extractTime(content: string, type: 'prep' | 'cook'): number | un
 }
 
 // Extract difficulty from recipe content
-export function extractDifficulty(content: string): string | undefined {
+function extractDifficulty(content: string): string | undefined {
     const match = content.match(/difficulty:?\s*(easy|medium|hard)/i);
     return match ? match[1].toLowerCase() : undefined;
 }

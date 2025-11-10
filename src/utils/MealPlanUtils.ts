@@ -1,6 +1,5 @@
 import { App, TFile } from 'obsidian';
 import { MealPlannerSettings } from '../types/types';
-import { getDayEmoji } from './RecipeUtils';
 
 export interface MealPlanChecklistEntry {
   week: number;

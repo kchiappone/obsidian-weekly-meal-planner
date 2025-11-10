@@ -101,7 +101,7 @@ export const LastResortStrategy: RecipeSelectionStrategy = (
     day,
     settings,
     selected,
-    isKidMeal
+    _isKidMeal
 ) => {
     // Last resort ignores day constraints and kid meal status/constraints
     const remaining = recipes.filter(r => !selected.includes(r));

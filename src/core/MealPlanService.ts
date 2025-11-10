@@ -1,6 +1,6 @@
 import { App, Notice, TFile } from 'obsidian';
 import { Recipe, MealPlannerSettings } from '../types/types';
-import { scoreRecipe, meetsConstraints, getRecipeTotalTime, getDayEmoji, getDifficultyEmoji, getCurrentSeason, isRecipeInSeason, getRecipes } from '../utils/RecipeUtils';
+import { scoreRecipe, meetsConstraints, getRecipeTotalTime, getDayEmoji, getDifficultyEmoji, getRecipes } from '../utils/RecipeUtils';
 import {
     RecipeSelectionStrategy,
     FamilyFriendlyStrategy,
@@ -19,22 +19,7 @@ const mainMealStrategies: RecipeSelectionStrategy[] = [
     LastResortStrategy,
 ];
 
-/**
- * Helper regex to match a leading number (integer or decimal) and the remainder of the string.
- * This is used for consolidation and summing quantities.
- * e.g., "2 large eggs" -> Quantity: 2, Descriptor: "large eggs"
- * e.g., "1.5 cups flour" -> Quantity: 1.5, Descriptor: "cups flour"
- */
-const QUANTITY_REGEX = /^(\d+\.?\d*)\s*(.*?)$/;
 
-/**
- * Data structure to hold the consolidated shopping list item.
- */
-interface ConsolidatedItem {
-    quantity: number;
-    unitDesc: string; // The part of the string after the number (e.g., "large eggs", "cup flour")
-    recipeNames: Set<string>;
-}
 
 
 export function selectRecipes(
@@ -55,7 +40,7 @@ export function selectRecipes(
         const dayIndex = i % days.length;
         const day = days[dayIndex];
         let pool: Recipe[] = [];
-        for (const strategy of mainMealStrategies) {
+        for (const _strategy of mainMealStrategies) {
             pool = recipes.filter(r =>
                 !assignedRecipes.has(r) &&
                 meetsConstraints(r, day, settings.dayConstraints, false) &&
@@ -100,7 +85,7 @@ export function selectRecipes(
         
         const scored = pool.map(recipe => ({
             recipe,
-            score: scoreRecipe(recipe, selected.filter(Boolean) as Recipe[], i, selected)
+            score: scoreRecipe(recipe, selected.filter(Boolean), i, selected)
         }));
         scored.sort((a, b) => b.score - a.score);
         
@@ -175,7 +160,6 @@ export function selectRecipes(
     for (let i = 0; i < count; i++) {
         const dayIndex = i % days.length;
         const day = days[dayIndex];
-        const week = Math.floor(i / settings.mealsPerWeek) + 1;
 
         // Skip logic
         if (!kidMealIndices[i]) continue;
@@ -194,7 +178,7 @@ export function selectRecipes(
             kidFriendlyRecipes, // The pool is filtered to kid-friendly only
             day,
             settings,
-            [...selected.filter(Boolean) as Recipe[], ...currentWeekKidMeals],
+            [...selected.filter(Boolean), ...currentWeekKidMeals],
             true, // isKidMeal is true
             currentWeekKidMeals // Pass current week's kid meals separately for week constraint logic
         );
@@ -204,7 +188,7 @@ export function selectRecipes(
         }
     }
 
-    return { regularMeals: selected.filter(Boolean) as Recipe[], kidMeals: kidMeals };
+    return { regularMeals: selected.filter(Boolean), kidMeals: kidMeals };
 }
 
 // --- Meal Plan Generation Function ---

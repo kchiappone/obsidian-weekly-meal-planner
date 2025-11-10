@@ -1,6 +1,6 @@
 
 // src/main.ts
-import { App, Plugin, TFile, Notice, normalizePath, Menu } from 'obsidian';
+import { Plugin, TFile, Notice, normalizePath, Menu } from 'obsidian';
 import { MealPlannerSettings, DEFAULT_SETTINGS } from './types/types';
 import { MealPlannerSettingTab } from './settings/SettingsTab';
 import { SwapMealsModal, ChangeMealModal, OverwriteOrNewFileModal, RecipeNameModal } from './modals/Modals';
@@ -17,12 +17,7 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		// Bind utility methods needed by other modules
-		const updateRecipeLastUsed = this.updateRecipeLastUsed.bind(this);
-		const getRecipesBound = this.getRecipesBound.bind(this);
-		const saveSettingsBound = this.saveSettings.bind(this);
-
-		this.addRibbonIcon('chef-hat', 'Weekly Meal Planner', (evt: MouseEvent) => {
+		this.addRibbonIcon('chef-hat', 'Weekly meal planner', (evt: MouseEvent) => {
 			const menu = new Menu();
 			
 			menu.addItem((item) =>
@@ -39,8 +34,8 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 					.setTitle('Swap meals between days')
 					.setIcon('switch')
 					.onClick(() => {
-						new SwapMealsModal(this.app, this, async (entry1, entry2) => {
-							await handleSwapMeals(this.app, this.settings, entry1, entry2);
+						new SwapMealsModal(this.app, this, (entry1, entry2) => {
+							handleSwapMeals(this.app, this.settings, entry1, entry2);
 						}).open();
 					})
 			);
@@ -53,20 +48,20 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 						new ChangeMealModal(
 							this.app,
 							this,
-							async (
+							(
 								week: number,
 								day: string,
 								recipeName: string,
 								originalChecklistLine: string,
 								kidMealName?: string | null
 							) => {
-								await handleChangeMealForDay(
+								handleChangeMealForDay(
 									this.app,
 									this.settings,
 									week,
 									day,
 									recipeName,
-									updateRecipeLastUsed,
+									this.updateRecipeLastUsed.bind(this),
 									originalChecklistLine,
 									kidMealName
 								);
@@ -99,8 +94,8 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 			id: 'swap-meals',
 			name: 'Swap meals between days',
 			callback: () => {
-				new SwapMealsModal(this.app, this, async (entry1, entry2) => {
-					await handleSwapMeals(this.app, this.settings, entry1, entry2);
+				new SwapMealsModal(this.app, this, (entry1, entry2) => {
+					handleSwapMeals(this.app, this.settings, entry1, entry2);
 				}).open();
 			}
 		});
@@ -112,20 +107,20 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 				new ChangeMealModal(
 					this.app,
 					this,
-					async (
+					(
 						week: number,
 						day: string,
 						recipeName: string,
 						originalChecklistLine: string,
 						kidMealName?: string | null
 					) => {
-						await handleChangeMealForDay(
+						handleChangeMealForDay(
 							this.app,
 							this.settings,
 							week,
 							day,
 							recipeName,
-							updateRecipeLastUsed,
+							this.updateRecipeLastUsed.bind(this),
 							originalChecklistLine,
 							kidMealName
 						);
@@ -252,7 +247,6 @@ export default class WeeklyMealPlannerPlugin extends Plugin {
 	}
 
 	private generateRecipeTemplate(recipeName: string): string {
-		const currentDate = new Date().toISOString();
 		return `---
 tags:
   - recipe

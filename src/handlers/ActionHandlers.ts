@@ -112,7 +112,7 @@ export async function swapMeals(
         new Notice('Meal plan file not found.');
         return;
     }
-    let content = await app.vault.read(file);
+    const content = await app.vault.read(file);
     if (!content.includes(entry1.line) || !content.includes(entry2.line)) {
         new Notice('Could not find one or both selected meals in the meal plan.');
             return;

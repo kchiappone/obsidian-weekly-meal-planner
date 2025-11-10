@@ -53,7 +53,7 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 			.setDesc('Comma-separated list of tags to include in the frontmatter of generated meal plan notes.')
 			.addText(text =>
 				text
-					.setPlaceholder('meal, weekly, food')
+					.setPlaceholder('Meal, weekly, food')
 					.setValue((this.plugin.settings.mealPlanTags || ['meal_plan']).join(', '))
 					.onChange(async value => {
 						this.plugin.settings.mealPlanTags = value.split(',').map(t => t.trim()).filter(Boolean);
@@ -226,7 +226,7 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 					dropdown
 						.addOption('', 'Any')
 						.addOption('easy', 'Easy')
-						.addOption('medium', 'Easy-Medium')
+						.addOption('medium', 'Easy-medium')
 						.setValue(constraints.maxDifficulty || '')
 						.onChange(async value => {
 							if (!this.plugin.settings.dayConstraints[day]) {
@@ -244,7 +244,7 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 
 		// --- Kid Meal Options Section ---
 		new Setting(containerEl)
-			.setName('Kid meal options')
+			.setName('Kid\'s meal')
 			.setDesc('Toggle whether to include a separate kid meal for each day.')
 			.setHeading();
 

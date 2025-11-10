@@ -2,6 +2,7 @@
 import { App, Modal, Setting } from 'obsidian';
 import RecipeMealPlannerPlugin from '../main';
 import { extractMealPlanChecklistEntries, MealPlanChecklistEntry } from '../utils/MealPlanUtils';
+import { Recipe } from '../types/types';
 
 export class SwapMealsModal extends Modal {
 	plugin: RecipeMealPlannerPlugin;
@@ -15,7 +16,7 @@ export class SwapMealsModal extends Modal {
 
 	async onOpen() {
 		const { contentEl } = this;
-		contentEl.createEl('h2', { text: 'Swap Meals Between Days' });
+		contentEl.createEl('h2', { text: 'Swap meals between days' });
 
 		// Load all checklist entries from the current meal plan
 		const mealPlanPath = this.plugin.settings.currentMealPlanPath;
@@ -77,9 +78,9 @@ export class SwapMealsModal extends Modal {
 // Modal to prompt for adding a kid meal if needed
     export class KidMealPromptModal extends Modal {
     plugin: RecipeMealPlannerPlugin;
-    kidMeals: any[];
+    kidMeals: Recipe[];
     onSubmit: (kidMealName: string | null) => void;
-    constructor(app: App, plugin: RecipeMealPlannerPlugin, kidMeals: any[], onSubmit: (kidMealName: string | null) => void) {
+    constructor(app: App, plugin: RecipeMealPlannerPlugin, kidMeals: Recipe[], onSubmit: (kidMealName: string | null) => void) {
         super(app);
         this.plugin = plugin;
         this.kidMeals = kidMeals;
@@ -87,7 +88,7 @@ export class SwapMealsModal extends Modal {
     }
     onOpen() {
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: 'Add a Kid Meal?' });
+        contentEl.createEl('h2', { text: 'Add a kid\'s meal?' });
         contentEl.createEl('div', { text: 'The selected recipe is not family or kid friendly, but this day requires a kid meal. Would you like to add one?' });
         let selectedKidMeal = this.kidMeals.length > 0 ? this.kidMeals[0].name : null;
         if (this.kidMeals.length > 0) {
@@ -102,7 +103,7 @@ export class SwapMealsModal extends Modal {
                 });
         }
         new Setting(contentEl)
-            .addButton(btn => btn.setButtonText('Add Kid Meal').setCta().onClick(() => {
+            .addButton(btn => btn.setButtonText('Add kid\'s meal').setCta().onClick(() => {
                 this.close();
                 this.onSubmit(selectedKidMeal);
             }))
@@ -128,7 +129,7 @@ export class ChangeMealModal extends Modal {
 
     async onOpen() {
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: 'Change Meal for a Day' });
+        contentEl.createEl('h2', { text: 'Change meal' });
 
         // Load all checklist entries from the current meal plan
         const mealPlanPath = this.plugin.settings.currentMealPlanPath;
@@ -175,9 +176,9 @@ export class ChangeMealModal extends Modal {
 
         new Setting(contentEl)
             .addButton(btn => btn
-                .setButtonText('Change Meal')
+                .setButtonText('Change meal')
                 .setCta()
-                .onClick(async () => {
+                .onClick(() => {
                     // Check if the selected recipe is not family or kid friendly, and the day needs a kid meal
                     const recipe = recipes.find((r: { name: string; familyFriendly?: boolean; kidFriendly?: boolean }): boolean => r.name === selectedRecipe);
                     const dayConstraints = this.plugin.settings.dayConstraints[selectedEntry.day];
@@ -204,10 +205,10 @@ export class ChangeMealModal extends Modal {
 }
 
 export class OverwriteOrNewFileModal extends Modal {
-    onOverwrite: () => void;
-    onCreateNew: () => void;
+    onOverwrite: () => void | Promise<void>;
+    onCreateNew: () => void | Promise<void>;
     filePath: string;
-    constructor(app: App, filePath: string, onOverwrite: () => void, onCreateNew: () => void) {
+    constructor(app: App, filePath: string, onOverwrite: () => void | Promise<void>, onCreateNew: () => void | Promise<void>) {
         super(app);
         this.filePath = filePath;
         this.onOverwrite = onOverwrite;
@@ -215,16 +216,22 @@ export class OverwriteOrNewFileModal extends Modal {
     }
     onOpen() {
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: 'Meal Plan File Exists' });
+        contentEl.createEl('h2', { text: 'Meal plan file exists' });
         contentEl.createEl('div', { text: `A meal plan file already exists at: ${this.filePath}` });
         new Setting(contentEl)
             .addButton(btn => btn.setButtonText('Overwrite').setCta().onClick(() => {
                 this.close();
-                this.onOverwrite();
+                const result = this.onOverwrite();
+                if (result instanceof Promise) {
+                    result.catch(console.error);
+                }
             }))
-            .addButton(btn => btn.setButtonText('Create New').onClick(() => {
+            .addButton(btn => btn.setButtonText('Create new').onClick(() => {
                 this.close();
-                this.onCreateNew();
+                const result = this.onCreateNew();
+                if (result instanceof Promise) {
+                    result.catch(console.error);
+                }
             }))
             .addExtraButton(btn => btn.setIcon('cross').setTooltip('Cancel').onClick(() => {
                 this.close();
@@ -246,13 +253,13 @@ export class RecipeNameModal extends Modal {
 
     onOpen() {
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: 'Create New Recipe' });
+        contentEl.createEl('h2', { text: 'Create new recipe' });
 
         new Setting(contentEl)
             .setName('Recipe name')
             .setDesc('Enter a name for your new recipe')
             .addText(text => {
-                text.setPlaceholder('e.g., Spaghetti and Meatballs')
+                text.setPlaceholder('Spaghetti and meatballs')
                     .setValue(this.recipeName)
                     .onChange(value => {
                         this.recipeName = value;
@@ -268,7 +275,7 @@ export class RecipeNameModal extends Modal {
 
         new Setting(contentEl)
             .addButton(btn => btn
-                .setButtonText('Create Recipe')
+                .setButtonText('Create recipe')
                 .setCta()
                 .onClick(() => this.submit())
             )
