@@ -1,8 +1,45 @@
 // src/SettingsTab.ts
 
 // src/SettingsTab.ts
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab, Setting, TFolder, AbstractInputSuggest } from 'obsidian';
 import RecipeMealPlannerPlugin from '../main';
+
+// Folder suggestion helper class
+class FolderSuggest extends AbstractInputSuggest<TFolder> {
+	private inputElement: HTMLInputElement;
+
+	constructor(app: App, inputEl: HTMLInputElement) {
+		super(app, inputEl);
+		this.inputElement = inputEl;
+	}
+
+	getSuggestions(inputStr: string): TFolder[] {
+		const abstractFiles = this.app.vault.getAllLoadedFiles();
+		const folders: TFolder[] = [];
+		const lowerCaseInputStr = inputStr.toLowerCase();
+
+		abstractFiles.forEach((folder: any) => {
+			if (
+				folder instanceof TFolder &&
+				folder.path.toLowerCase().contains(lowerCaseInputStr)
+			) {
+				folders.push(folder);
+			}
+		});
+
+		return folders.slice(0, 10); // Limit to 10 suggestions
+	}
+
+	renderSuggestion(folder: TFolder, el: HTMLElement): void {
+		el.createEl("div", { text: folder.path });
+	}
+
+	selectSuggestion(folder: TFolder): void {
+		this.inputElement.value = folder.path;
+		this.inputElement.trigger("input");
+		this.close();
+	}
+}
 
 export class MealPlannerSettingTab extends PluginSettingTab {
 	plugin: RecipeMealPlannerPlugin;
@@ -19,33 +56,37 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		// Recipe folder path
+		// Recipe folder path with folder suggestion
 		new Setting(containerEl)
 			.setName('Recipe folder path')
 			.setDesc('Path to folder containing your recipe notes')
-			.addText(text =>
+			.addText(text => {
 				text
 					.setPlaceholder('Recipes')
 					.setValue(this.plugin.settings.recipeFolderPath)
 					.onChange(async value => {
 						this.plugin.settings.recipeFolderPath = value;
 						await this.plugin.saveSettings();
-					})
-			);
+					});
+				// Add folder suggestion to the text input
+				new FolderSuggest(this.app, text.inputEl);
+			});
 
-		// Meal plan folder path
+		// Meal plan folder path with folder suggestion
 		new Setting(containerEl)
 			.setName('Meal plan folder path')
 			.setDesc('Path to folder where generated meal plan files are stored')
-			.addText(text =>
+			.addText(text => {
 				text
 					.setPlaceholder('Meals')
 					.setValue(this.plugin.settings.mealPlanFolderPath || 'Meals')
 					.onChange(async value => {
 						this.plugin.settings.mealPlanFolderPath = value;
 						await this.plugin.saveSettings();
-					})
-			);
+					});
+				// Add folder suggestion to the text input
+				new FolderSuggest(this.app, text.inputEl);
+			});
 
 		// Meal plan note tags
 		new Setting(containerEl)
@@ -160,116 +201,175 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 					.onChange(async value => {
 						this.plugin.settings.respectSeasons = value;
 						await this.plugin.saveSettings();
+						// Re-run display function to show/hide hemisphere setting
+						this.display();
 					})
 			);
 
-		new Setting(containerEl)
-			.setName('Hemisphere')
-			.setDesc('Set your hemisphere to correctly determine seasons.')
-			.addDropdown(dropdown =>
-				dropdown
-					.addOption('northern', 'Northern')
-					.addOption('southern', 'Southern')
-					.setValue(this.plugin.settings.hemisphere)
-					.onChange(async value => {
-						this.plugin.settings.hemisphere = value as 'northern' | 'southern';
-						await this.plugin.saveSettings();
-					})
-			);
+		// Only show hemisphere setting if seasonality is enabled
+		if (this.plugin.settings.respectSeasons) {
+			new Setting(containerEl)
+				.setName('Hemisphere')
+				.setDesc('Set your hemisphere to correctly determine seasons.')
+				.addDropdown(dropdown =>
+					dropdown
+						.addOption('northern', 'Northern')
+						.addOption('southern', 'Southern')
+						.setValue(this.plugin.settings.hemisphere)
+						.onChange(async value => {
+							this.plugin.settings.hemisphere = value as 'northern' | 'southern';
+							await this.plugin.saveSettings();
+						})
+				);
+		}
 
 		// --- Time Constraints Section ---
+		// Check if any time constraints are already set
+		const hasTimeConstraints = this.plugin.settings.daysOfWeek.some(day => {
+			const constraints = this.plugin.settings.dayConstraints[day];
+			return constraints && constraints.maxTime !== undefined;
+		});
+
+		// Add a toggle to show/hide time constraints
+		let showTimeConstraints = hasTimeConstraints;
 		new Setting(containerEl)
 			.setName('Time constraints')
 			.setDesc('Set maximum cooking time (in minutes) for each day of the week.')
-			.setHeading();
+			.addToggle(toggle =>
+				toggle
+					.setValue(showTimeConstraints)
+					.onChange(async value => {
+						showTimeConstraints = value;
+						// Re-run display function to show/hide time constraint settings
+						this.display();
+					})
+			);
 
-		this.plugin.settings.daysOfWeek.forEach(day => {
-			const constraints = this.plugin.settings.dayConstraints[day] || {};
-			const shortDay = day.substring(0, 3); // Mon, Tue, Wed, etc.
+		if (showTimeConstraints) {
+			this.plugin.settings.daysOfWeek.forEach(day => {
+				const constraints = this.plugin.settings.dayConstraints[day] || {};
+				const shortDay = day.substring(0, 3); // Mon, Tue, Wed, etc.
 
-			new Setting(containerEl)
-				.setName(shortDay)
-				.addText(text =>
-					text
-						.setPlaceholder('Minutes')
-						.setValue(constraints.maxTime ? String(constraints.maxTime) : '')
-						.onChange(async value => {
-							if (!this.plugin.settings.dayConstraints[day]) {
-								this.plugin.settings.dayConstraints[day] = {};
-							}
-							if (value === '') {
-								delete this.plugin.settings.dayConstraints[day].maxTime;
-							} else {
-								const num = parseInt(value);
-								if (!isNaN(num) && num > 0) {
-									this.plugin.settings.dayConstraints[day].maxTime = num;
+				new Setting(containerEl)
+					.setName(shortDay)
+					.addText(text =>
+						text
+							.setPlaceholder('Minutes')
+							.setValue(constraints.maxTime ? String(constraints.maxTime) : '')
+							.onChange(async value => {
+								if (!this.plugin.settings.dayConstraints[day]) {
+									this.plugin.settings.dayConstraints[day] = {};
 								}
-							}
-							await this.plugin.saveSettings();
-						})
-				);
-		});
+								if (value === '') {
+									delete this.plugin.settings.dayConstraints[day].maxTime;
+								} else {
+									const num = parseInt(value);
+									if (!isNaN(num) && num > 0) {
+										this.plugin.settings.dayConstraints[day].maxTime = num;
+									}
+								}
+								await this.plugin.saveSettings();
+							})
+					);
+			});
+		}
 
 		// --- Difficulty Constraints Section ---
+		// Check if any difficulty constraints are already set
+		const hasDifficultyConstraints = this.plugin.settings.daysOfWeek.some(day => {
+			const constraints = this.plugin.settings.dayConstraints[day];
+			return constraints && constraints.maxDifficulty !== undefined;
+		});
+
+		// Add a toggle to show/hide difficulty constraints
+		let showDifficultyConstraints = hasDifficultyConstraints;
 		new Setting(containerEl)
 			.setName('Difficulty constraints')
 			.setDesc('Set maximum difficulty level for each day of the week.')
-			.setHeading();
+			.addToggle(toggle =>
+				toggle
+					.setValue(showDifficultyConstraints)
+					.onChange(async value => {
+						showDifficultyConstraints = value;
+						// Re-run display function to show/hide difficulty constraint settings
+						this.display();
+					})
+			);
 
-		this.plugin.settings.daysOfWeek.forEach(day => {
-			const constraints = this.plugin.settings.dayConstraints[day] || {};
-			const shortDay = day.substring(0, 3); // Mon, Tue, Wed, etc.
+		if (showDifficultyConstraints) {
+			this.plugin.settings.daysOfWeek.forEach(day => {
+				const constraints = this.plugin.settings.dayConstraints[day] || {};
+				const shortDay = day.substring(0, 3); // Mon, Tue, Wed, etc.
 
-			new Setting(containerEl)
-				.setName(shortDay)
-				.addDropdown(dropdown =>
-					dropdown
-						.addOption('', 'Any')
-						.addOption('easy', 'Easy')
-						.addOption('medium', 'Easy-medium')
-						.setValue(constraints.maxDifficulty || '')
-						.onChange(async value => {
-							if (!this.plugin.settings.dayConstraints[day]) {
-								this.plugin.settings.dayConstraints[day] = {};
-							}
-							if (value === '') {
-								delete this.plugin.settings.dayConstraints[day].maxDifficulty;
-							} else {
-								this.plugin.settings.dayConstraints[day].maxDifficulty = value;
-							}
-							await this.plugin.saveSettings();
-						})
-				);
-		});
+				new Setting(containerEl)
+					.setName(shortDay)
+					.addDropdown(dropdown =>
+						dropdown
+							.addOption('', 'Any')
+							.addOption('easy', 'Easy')
+							.addOption('medium', 'Easy-medium')
+							.setValue(constraints.maxDifficulty || '')
+							.onChange(async value => {
+								if (!this.plugin.settings.dayConstraints[day]) {
+									this.plugin.settings.dayConstraints[day] = {};
+								}
+								if (value === '') {
+									delete this.plugin.settings.dayConstraints[day].maxDifficulty;
+								} else {
+									this.plugin.settings.dayConstraints[day].maxDifficulty = value;
+								}
+								await this.plugin.saveSettings();
+							})
+					);
+			});
+		}
 
 		// --- Kid Meal Options Section ---
+		// Check if any kid meal options are already set
+		const hasKidMealOptions = this.plugin.settings.daysOfWeek.some(day => {
+			const constraints = this.plugin.settings.dayConstraints[day];
+			return constraints && constraints.needsKidMeal === true;
+		});
+
+		// Add a toggle to show/hide kid meal options
+		let showKidMealOptions = hasKidMealOptions;
 		new Setting(containerEl)
 			.setName('Kid\'s meal')
 			.setDesc('Toggle whether to include a separate kid meal for each day.')
-			.setHeading();
+			.addToggle(toggle =>
+				toggle
+					.setValue(showKidMealOptions)
+					.onChange(async value => {
+						showKidMealOptions = value;
+						// Re-run display function to show/hide kid meal settings
+						this.display();
+					})
+			);
 
-		this.plugin.settings.daysOfWeek.forEach(day => {
-			const constraints = this.plugin.settings.dayConstraints[day] || {};
-			const shortDay = day.substring(0, 3); // Mon, Tue, Wed, etc.
+		if (showKidMealOptions) {
+			this.plugin.settings.daysOfWeek.forEach(day => {
+				const constraints = this.plugin.settings.dayConstraints[day] || {};
+				const shortDay = day.substring(0, 3); // Mon, Tue, Wed, etc.
 
-			new Setting(containerEl)
-				.setName(shortDay)
-				.addToggle(toggle =>
-					toggle
-						.setTooltip('Include kid meal')
-						.setValue(constraints.needsKidMeal || false)
-						.onChange(async value => {
-							if (!this.plugin.settings.dayConstraints[day]) {
-								this.plugin.settings.dayConstraints[day] = {};
-							}
-							this.plugin.settings.dayConstraints[day].needsKidMeal = value;
-							if (!value) {
-								delete this.plugin.settings.dayConstraints[day].needsKidMeal;
-							}
-							await this.plugin.saveSettings();
-						})
-				);
-		});
+				new Setting(containerEl)
+					.setName(shortDay)
+					.addToggle(toggle =>
+						toggle
+							.setTooltip('Include kid meal')
+							.setValue(constraints.needsKidMeal || false)
+							.onChange(async value => {
+								if (!this.plugin.settings.dayConstraints[day]) {
+									this.plugin.settings.dayConstraints[day] = {};
+								}
+								this.plugin.settings.dayConstraints[day].needsKidMeal = value;
+								if (!value) {
+									delete this.plugin.settings.dayConstraints[day].needsKidMeal;
+								}
+								await this.plugin.saveSettings();
+							})
+					);
+			});
+		}
 
 		// Day Emojis
 		new Setting(containerEl)
