@@ -1,4 +1,4 @@
-import { App, TFile } from 'obsidian';
+import { App, TFile, normalizePath } from 'obsidian';
 import { MealPlannerSettings } from '../types/types';
 
 export interface MealPlanChecklistEntry {
@@ -14,7 +14,7 @@ export interface MealPlanChecklistEntry {
  * Parse the current meal plan file and extract all checklist lines with week, day, emoji, and recipes.
  */
 export async function extractMealPlanChecklistEntries(app: App, settings: MealPlannerSettings, filePath: string): Promise<MealPlanChecklistEntry[]> {
-  const file = app.vault.getAbstractFileByPath(filePath);
+  const file = app.vault.getAbstractFileByPath(normalizePath(filePath));
   if (!(file instanceof TFile)) return [];
   const content = await app.vault.cachedRead(file);
   const lines = content.split(/\r?\n/);

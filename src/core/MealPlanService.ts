@@ -1,4 +1,4 @@
-import { App, Notice, TFile } from 'obsidian';
+import { App, Notice, TFile, normalizePath } from 'obsidian';
 import { Recipe, MealPlannerSettings } from '../types/types';
 import { scoreRecipe, meetsConstraints, getRecipeTotalTime, getDayEmoji, getDifficultyEmoji, getRecipes } from '../utils/RecipeUtils';
 import {
@@ -224,16 +224,17 @@ export async function generateMealPlan(app: App, settings: MealPlannerSettings, 
     // --- Meal Plan Note Content Generation ---
     const date = new Date().toISOString().slice(0, 10);
 
-    let folder = (settings.mealPlanFolderPath || 'Meals').trim();
+    let folder = normalizePath((settings.mealPlanFolderPath || 'Meals').trim());
     // Remove leading/trailing slashes and whitespace
     folder = folder.replace(/^\/+|\/+$/g, '');
     if (!folder) folder = 'Meal Plans';
+    folder = normalizePath(folder);
     // Ensure the folder exists
     const folderObj = app.vault.getAbstractFileByPath(folder);
     if (!folderObj) {
         await app.vault.createFolder(folder);
     }
-    const filePath = filePathOverride || `${folder}/Meal Plan - ${date}.md`;
+    const filePath = normalizePath(filePathOverride || `${folder}/Meal Plan - ${date}.md`);
     let content = `---\n`;
     content += `date_generated: ${date}\n`;
     const tags = (settings.mealPlanTags && settings.mealPlanTags.length > 0) ? settings.mealPlanTags : ['meal_plan'];
@@ -334,7 +335,7 @@ export async function generateMealPlan(app: App, settings: MealPlannerSettings, 
 
 // Helper function to regenerate shopping list from existing meal plan content
 export async function regenerateShoppingList(app: App, settings: MealPlannerSettings, filePath: string): Promise<void> {
-    const file = app.vault.getAbstractFileByPath(filePath);
+    const file = app.vault.getAbstractFileByPath(normalizePath(filePath));
     if (!(file instanceof TFile)) {
         new Notice('Meal plan file not found.');
         return;

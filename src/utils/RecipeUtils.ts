@@ -1,5 +1,5 @@
 
-import { App, Notice } from 'obsidian';
+import { App, Notice, normalizePath } from 'obsidian';
 import { Recipe, MealPlannerSettings, DayConstraints } from '../types/types';
 
 // =========================
@@ -214,13 +214,14 @@ function extractDifficulty(content: string): string | undefined {
 // Load all recipes from the vault
 export async function getRecipes(app: App, settings: MealPlannerSettings): Promise<Recipe[]> {
     const recipes: Recipe[] = [];
-    const folder = app.vault.getAbstractFileByPath(settings.recipeFolderPath);
+    const normalizedRecipeFolderPath = normalizePath(settings.recipeFolderPath);
+    const folder = app.vault.getAbstractFileByPath(normalizedRecipeFolderPath);
     if (!folder) {
         new Notice(`Recipe folder "${settings.recipeFolderPath}" not found!`);
         return recipes;
     }
     const files = app.vault.getMarkdownFiles().filter(file =>
-        file.path.startsWith(settings.recipeFolderPath)
+        file.path.startsWith(normalizedRecipeFolderPath)
     );
     for (const file of files) {
         const content = await app.vault.cachedRead(file);

@@ -1,4 +1,4 @@
-import { App, TFile, Notice } from 'obsidian';
+import { App, TFile, Notice, normalizePath } from 'obsidian';
 import { Recipe, MealPlannerSettings } from '../types/types';
 import { getRecipes, getRecipeTotalTime, getDifficultyEmoji } from '../utils/RecipeUtils';
 import { regenerateShoppingList } from '../core/MealPlanService';
@@ -109,7 +109,7 @@ export async function swapMeals(
         new Notice('No active meal plan found. Generate a meal plan first.');
         return;
     }
-    const file = app.vault.getAbstractFileByPath(settings.currentMealPlanPath);
+    const file = app.vault.getAbstractFileByPath(normalizePath(settings.currentMealPlanPath));
     if (!(file instanceof TFile)) {
         new Notice('Meal plan file not found.');
         return;
