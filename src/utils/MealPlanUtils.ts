@@ -16,7 +16,7 @@ export interface MealPlanChecklistEntry {
 export async function extractMealPlanChecklistEntries(app: App, settings: MealPlannerSettings, filePath: string): Promise<MealPlanChecklistEntry[]> {
   const file = app.vault.getAbstractFileByPath(filePath);
   if (!(file instanceof TFile)) return [];
-  const content = await app.vault.read(file);
+  const content = await app.vault.cachedRead(file);
   const lines = content.split(/\r?\n/);
   const entries: MealPlanChecklistEntry[] = [];
   let currentWeek = 1;
