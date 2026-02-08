@@ -12,7 +12,7 @@ export interface MealPlannerSettings {
 	mealsPerWeek: number;
 	weeksToGenerate: number;
 	daysOfWeek: string[];
-	respectSeasons: boolean;
+	enableSeasonality: boolean;
 	hemisphere: 'northern' | 'southern';
 	dayConstraints: Record<string, DayConstraints>;
 	currentMealPlanPath?: string;
@@ -32,7 +32,7 @@ export const DEFAULT_SETTINGS: MealPlannerSettings = {
 	mealsPerWeek: 7,
 	weeksToGenerate: 1,
 	daysOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-	respectSeasons: true,
+	enableSeasonality: false,
 	hemisphere: 'northern',
 	dayConstraints: {},
 	skipKidMealIfFamilyFriendly: true,

@@ -43,10 +43,16 @@ class FolderSuggest extends AbstractInputSuggest<TFolder> {
 
 export class MealPlannerSettingTab extends PluginSettingTab {
 	plugin: RecipeMealPlannerPlugin;
+	private showTimeConstraints: boolean = false;
+	private showDifficultyConstraints: boolean = false;
+	private showKidMealOptions: boolean = false;
 
 	constructor(app: App, plugin: RecipeMealPlannerPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
+		
+		// All constraint toggles are disabled by default
+		// Users must explicitly enable them if needed
 	}
 
 	// =========================
@@ -141,20 +147,6 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 				});
 			});
 
-		// Skip kid meal if family friendly toggle
-		new Setting(containerEl)
-			.setName('Skip kid meal if family friendly')
-			.setDesc("Skip the kid's meal if a family-friendly meal is chosen for that day.")
-			.addToggle(toggle =>
-				toggle
-					.setTooltip('Skip kid meal')
-					.setValue(this.plugin.settings.skipKidMealIfFamilyFriendly)
-					.onChange(async value => {
-						this.plugin.settings.skipKidMealIfFamilyFriendly = value;
-						await this.plugin.saveSettings();
-					})
-			);
-
 		new Setting(containerEl)
 			.setName('Generate shopping list')
 			.setDesc('Include a shopping list section in the generated meal plan note.')
@@ -197,9 +189,9 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 			.addToggle(toggle =>
 				toggle
 					.setTooltip('Consider seasonality')
-					.setValue(this.plugin.settings.respectSeasons)
+					.setValue(this.plugin.settings.enableSeasonality)
 					.onChange(async value => {
-						this.plugin.settings.respectSeasons = value;
+						this.plugin.settings.enableSeasonality = value;
 						await this.plugin.saveSettings();
 						// Re-run display function to show/hide hemisphere setting
 						this.display();
@@ -207,7 +199,7 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 			);
 
 		// Only show hemisphere setting if seasonality is enabled
-		if (this.plugin.settings.respectSeasons) {
+		if (this.plugin.settings.enableSeasonality) {
 			new Setting(containerEl)
 				.setName('Hemisphere')
 				.setDesc('Set your hemisphere to correctly determine seasons.')
@@ -224,28 +216,30 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 		}
 
 		// --- Time Constraints Section ---
-		// Check if any time constraints are already set
-		const hasTimeConstraints = this.plugin.settings.daysOfWeek.some(day => {
-			const constraints = this.plugin.settings.dayConstraints[day];
-			return constraints && constraints.maxTime !== undefined;
-		});
-
 		// Add a toggle to show/hide time constraints
-		let showTimeConstraints = hasTimeConstraints;
 		new Setting(containerEl)
 			.setName('Time constraints')
 			.setDesc('Set maximum cooking time (in minutes) for each day of the week.')
 			.addToggle(toggle =>
 				toggle
-					.setValue(showTimeConstraints)
-					.onChange(async value => {
-						showTimeConstraints = value;
+					.setValue(this.showTimeConstraints)
+					.onChange(async (value) => {
+						this.showTimeConstraints = value;
+						// If disabling time constraints, clear all maxTime settings
+						if (!value) {
+							this.plugin.settings.daysOfWeek.forEach(day => {
+								if (this.plugin.settings.dayConstraints[day]) {
+									delete this.plugin.settings.dayConstraints[day].maxTime;
+								}
+							});
+							await this.plugin.saveSettings();
+						}
 						// Re-run display function to show/hide time constraint settings
 						this.display();
 					})
 			);
 
-		if (showTimeConstraints) {
+		if (this.showTimeConstraints) {
 			this.plugin.settings.daysOfWeek.forEach(day => {
 				const constraints = this.plugin.settings.dayConstraints[day] || {};
 				const shortDay = day.substring(0, 3); // Mon, Tue, Wed, etc.
@@ -275,28 +269,30 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 		}
 
 		// --- Difficulty Constraints Section ---
-		// Check if any difficulty constraints are already set
-		const hasDifficultyConstraints = this.plugin.settings.daysOfWeek.some(day => {
-			const constraints = this.plugin.settings.dayConstraints[day];
-			return constraints && constraints.maxDifficulty !== undefined;
-		});
-
 		// Add a toggle to show/hide difficulty constraints
-		let showDifficultyConstraints = hasDifficultyConstraints;
 		new Setting(containerEl)
 			.setName('Difficulty constraints')
 			.setDesc('Set maximum difficulty level for each day of the week.')
 			.addToggle(toggle =>
 				toggle
-					.setValue(showDifficultyConstraints)
-					.onChange(async value => {
-						showDifficultyConstraints = value;
+					.setValue(this.showDifficultyConstraints)
+					.onChange(async (value) => {
+						this.showDifficultyConstraints = value;
+						// If disabling difficulty constraints, clear all maxDifficulty settings
+						if (!value) {
+							this.plugin.settings.daysOfWeek.forEach(day => {
+								if (this.plugin.settings.dayConstraints[day]) {
+									delete this.plugin.settings.dayConstraints[day].maxDifficulty;
+								}
+							});
+							await this.plugin.saveSettings();
+						}
 						// Re-run display function to show/hide difficulty constraint settings
 						this.display();
 					})
 			);
 
-		if (showDifficultyConstraints) {
+		if (this.showDifficultyConstraints) {
 			this.plugin.settings.daysOfWeek.forEach(day => {
 				const constraints = this.plugin.settings.dayConstraints[day] || {};
 				const shortDay = day.substring(0, 3); // Mon, Tue, Wed, etc.
@@ -325,28 +321,30 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 		}
 
 		// --- Kid Meal Options Section ---
-		// Check if any kid meal options are already set
-		const hasKidMealOptions = this.plugin.settings.daysOfWeek.some(day => {
-			const constraints = this.plugin.settings.dayConstraints[day];
-			return constraints && constraints.needsKidMeal === true;
-		});
-
 		// Add a toggle to show/hide kid meal options
-		let showKidMealOptions = hasKidMealOptions;
 		new Setting(containerEl)
 			.setName('Kid\'s meal')
 			.setDesc('Toggle whether to include a separate kid meal for each day.')
 			.addToggle(toggle =>
 				toggle
-					.setValue(showKidMealOptions)
-					.onChange(async value => {
-						showKidMealOptions = value;
+					.setValue(this.showKidMealOptions)
+					.onChange(async (value) => {
+						this.showKidMealOptions = value;
+						// If disabling kid meals, clear all needsKidMeal settings
+						if (!value) {
+							this.plugin.settings.daysOfWeek.forEach(day => {
+								if (this.plugin.settings.dayConstraints[day]) {
+									delete this.plugin.settings.dayConstraints[day].needsKidMeal;
+								}
+							});
+							await this.plugin.saveSettings();
+						}
 						// Re-run display function to show/hide kid meal settings
 						this.display();
 					})
 			);
 
-		if (showKidMealOptions) {
+		if (this.showKidMealOptions) {
 			this.plugin.settings.daysOfWeek.forEach(day => {
 				const constraints = this.plugin.settings.dayConstraints[day] || {};
 				const shortDay = day.substring(0, 3); // Mon, Tue, Wed, etc.
@@ -369,6 +367,20 @@ export class MealPlannerSettingTab extends PluginSettingTab {
 							})
 					);
 			});
+
+			// Skip kid meal if family friendly toggle
+			new Setting(containerEl)
+				.setName('Skip kid meal if family friendly')
+				.setDesc("Skip the kid's meal if a family-friendly meal is chosen for that day.")
+				.addToggle(toggle =>
+					toggle
+						.setTooltip('Skip kid meal')
+						.setValue(this.plugin.settings.skipKidMealIfFamilyFriendly)
+						.onChange(async value => {
+							this.plugin.settings.skipKidMealIfFamilyFriendly = value;
+							await this.plugin.saveSettings();
+						})
+				);
 		}
 
 		// Day Emojis
