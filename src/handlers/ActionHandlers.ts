@@ -82,7 +82,9 @@ export async function changeMealForDay(
         content = content.replace(weekSection, newWeekSection);
     }
 
-    await app.vault.modify(file, content);
+    await app.vault.process(file, (data) => {
+        return content;
+    });
     await updateRecipeLastUsed(newRecipe.file);
     if (newKidMeal) {
       await updateRecipeLastUsed(newKidMeal.file);
@@ -130,7 +132,9 @@ export async function swapMeals(
     const newLine2 = match2[1] + match1[2];
     let swappedContent = content.replace(entry1.line, '<<SWAP_PLACEHOLDER_1>>').replace(entry2.line, '<<SWAP_PLACEHOLDER_2>>');
     swappedContent = swappedContent.replace('<<SWAP_PLACEHOLDER_1>>', newLine1).replace('<<SWAP_PLACEHOLDER_2>>', newLine2);
-    await app.vault.modify(file, swappedContent);
+    await app.vault.process(file, (data) => {
+        return swappedContent;
+    });
     
     // Regenerate shopping list if enabled
     if (settings.generateShoppingList) {

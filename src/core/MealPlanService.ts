@@ -310,7 +310,9 @@ export async function generateMealPlan(app: App, settings: MealPlannerSettings, 
     const existingFile = app.vault.getAbstractFileByPath(filePath);
     let finalFile: TFile;
     if (existingFile instanceof TFile) {
-        await app.vault.modify(existingFile, content);
+        await app.vault.process(existingFile, (data) => {
+            return content;
+        });
         finalFile = existingFile;
     } else {
         finalFile = await app.vault.create(filePath, content);
@@ -421,5 +423,7 @@ export async function regenerateShoppingList(app: App, settings: MealPlannerSett
     }
 
     // Update the file
-    await app.vault.modify(file, content);
+    await app.vault.process(file, (data) => {
+        return content;
+    });
 }
