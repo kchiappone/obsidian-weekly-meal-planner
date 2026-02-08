@@ -1,7 +1,7 @@
 // src/SettingsTab.ts
 
 // src/SettingsTab.ts
-import { App, PluginSettingTab, Setting, TFolder, AbstractInputSuggest } from 'obsidian';
+import { App, PluginSettingTab, Setting, TFolder, AbstractInputSuggest, TAbstractFile } from 'obsidian';
 import RecipeMealPlannerPlugin from '../main';
 
 // Folder suggestion helper class
@@ -18,7 +18,7 @@ class FolderSuggest extends AbstractInputSuggest<TFolder> {
 		const folders: TFolder[] = [];
 		const lowerCaseInputStr = inputStr.toLowerCase();
 
-		abstractFiles.forEach((folder: any) => {
+		abstractFiles.forEach((folder: TAbstractFile) => {
 			if (
 				folder instanceof TFolder &&
 				folder.path.toLowerCase().contains(lowerCaseInputStr)
